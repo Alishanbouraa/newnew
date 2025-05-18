@@ -1,0 +1,17 @@
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\bin\Debug\net6.0-windows\OfflinePOS.DataAccess.deps.json
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\bin\Debug\net6.0-windows\OfflinePOS.DataAccess.runtimeconfig.json
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\bin\Debug\net6.0-windows\OfflinePOS.DataAccess.dll
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\bin\Debug\net6.0-windows\OfflinePOS.DataAccess.pdb
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\bin\Debug\net6.0-windows\OfflinePOS.Core.dll
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\bin\Debug\net6.0-windows\OfflinePOS.Core.pdb
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\obj\Debug\net6.0-windows\OfflinePOS.DataAccess.csproj.AssemblyReference.cache
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\obj\Debug\net6.0-windows\OfflinePOS.DataAccess.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\obj\Debug\net6.0-windows\OfflinePOS.DataAccess.AssemblyInfoInputs.cache
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\obj\Debug\net6.0-windows\OfflinePOS.DataAccess.AssemblyInfo.cs
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\obj\Debug\net6.0-windows\OfflinePOS.DataAccess.csproj.CoreCompileInputs.cache
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\obj\Debug\net6.0-windows\OfflineP.3DA09C88.Up2Date
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\obj\Debug\net6.0-windows\OfflinePOS.DataAccess.dll
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\obj\Debug\net6.0-windows\refint\OfflinePOS.DataAccess.dll
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\obj\Debug\net6.0-windows\OfflinePOS.DataAccess.pdb
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\obj\Debug\net6.0-windows\OfflinePOS.DataAccess.genruntimeconfig.cache
+C:\Users\$\Desktop\OfflinePOS\OfflinePOS.DataAccess\obj\Debug\net6.0-windows\ref\OfflinePOS.DataAccess.dll

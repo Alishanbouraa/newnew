@@ -1,0 +1,88 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\$\\Desktop\\OfflinePOS\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{F9E8737D-A39A-4397-B901-509AF844EC03}|OfflinePOS.Admin\\OfflinePOS.Admin.csproj|c:\\users\\$\\desktop\\offlinepos\\offlinepos.admin\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F9E8737D-A39A-4397-B901-509AF844EC03}|OfflinePOS.Admin\\OfflinePOS.Admin.csproj|solutionrelative:offlinepos.admin\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9DE0B80C-11B2-47A7-9B04-942B0AB69C38}|OfflinePOS.DataAccess\\OfflinePOS.DataAccess.csproj|c:\\users\\$\\desktop\\offlinepos\\offlinepos.dataaccess\\services\\databaseinitializer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9DE0B80C-11B2-47A7-9B04-942B0AB69C38}|OfflinePOS.DataAccess\\OfflinePOS.DataAccess.csproj|solutionrelative:offlinepos.dataaccess\\services\\databaseinitializer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9DE0B80C-11B2-47A7-9B04-942B0AB69C38}|OfflinePOS.DataAccess\\OfflinePOS.DataAccess.csproj|c:\\users\\$\\desktop\\offlinepos\\offlinepos.dataaccess\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9DE0B80C-11B2-47A7-9B04-942B0AB69C38}|OfflinePOS.DataAccess\\OfflinePOS.DataAccess.csproj|solutionrelative:offlinepos.dataaccess\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9DE0B80C-11B2-47A7-9B04-942B0AB69C38}|OfflinePOS.DataAccess\\OfflinePOS.DataAccess.csproj|c:\\users\\$\\desktop\\offlinepos\\offlinepos.dataaccess\\offlinepos.dataaccess.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{9DE0B80C-11B2-47A7-9B04-942B0AB69C38}|OfflinePOS.DataAccess\\OfflinePOS.DataAccess.csproj|solutionrelative:offlinepos.dataaccess\\offlinepos.dataaccess.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "App.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Admin\\App.xaml.cs",
+              "RelativeDocumentMoniker": "OfflinePOS.Admin\\App.xaml.cs",
+              "ToolTip": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Admin\\App.xaml.cs",
+              "RelativeToolTip": "OfflinePOS.Admin\\App.xaml.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAAA5wDcAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-17T20:26:32.035Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "DatabaseInitializer.cs",
+              "DocumentMoniker": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.DataAccess\\Services\\DatabaseInitializer.cs",
+              "RelativeDocumentMoniker": "OfflinePOS.DataAccess\\Services\\DatabaseInitializer.cs",
+              "ToolTip": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.DataAccess\\Services\\DatabaseInitializer.cs",
+              "RelativeToolTip": "OfflinePOS.DataAccess\\Services\\DatabaseInitializer.cs",
+              "ViewState": "AgIAAKAAAAAAAAAAAAAowMMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-17T20:25:58.519Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ApplicationDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.DataAccess\\ApplicationDbContext.cs",
+              "RelativeDocumentMoniker": "OfflinePOS.DataAccess\\ApplicationDbContext.cs",
+              "ToolTip": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.DataAccess\\ApplicationDbContext.cs",
+              "RelativeToolTip": "OfflinePOS.DataAccess\\ApplicationDbContext.cs",
+              "ViewState": "AgIAAD8AAAAAAAAAAAAlwFoAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-17T20:25:32.773Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "OfflinePOS.DataAccess.csproj",
+              "DocumentMoniker": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.DataAccess\\OfflinePOS.DataAccess.csproj",
+              "RelativeDocumentMoniker": "OfflinePOS.DataAccess\\OfflinePOS.DataAccess.csproj",
+              "ToolTip": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.DataAccess\\OfflinePOS.DataAccess.csproj",
+              "RelativeToolTip": "OfflinePOS.DataAccess\\OfflinePOS.DataAccess.csproj",
+              "ViewState": "AgIAABMAAAAAAAAAAAD4vxcAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-05-17T20:06:47.053Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "6F0SYDenV+w=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Core\\OfflinePOS.Core.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\$\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\6.0.1\\microsoft.extensions.dependencyinjection.6.0.1.nupkg.sha512",
+    "C:\\Users\\$\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\6.0.0\\microsoft.extensions.dependencyinjection.abstractions.6.0.0.nupkg.sha512",
+    "C:\\Users\\$\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\6.0.0\\system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
