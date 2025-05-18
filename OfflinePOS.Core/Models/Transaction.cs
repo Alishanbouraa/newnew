@@ -18,7 +18,7 @@ namespace OfflinePOS.Core.Models
         /// <summary>
         /// Customer associated with the transaction, if any
         /// </summary>
-        public int? CustomerId { get; set; }
+        public int? CustomerId { get; set; }  // Changed to nullable int?
 
         /// <summary>
         /// Invoice number for the transaction

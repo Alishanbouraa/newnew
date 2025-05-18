@@ -6,9 +6,11 @@ using Microsoft.Extensions.Logging;
 using OfflinePOS.Admin.Views;
 using OfflinePOS.Core.Diagnostics;
 using OfflinePOS.Core.Models;
+using OfflinePOS.Core.Repositories;
 using OfflinePOS.Core.Services;
 using OfflinePOS.Core.ViewModels;
 using OfflinePOS.DataAccess;
+using OfflinePOS.DataAccess.Repositories;
 using OfflinePOS.DataAccess.Services;
 using System;
 using System.Diagnostics;
@@ -58,7 +60,7 @@ namespace OfflinePOS.Admin
                 // Initialize database before showing the login window
                 _logger.LogInformation("Initializing application...");
                 var dbInitializer = _serviceProvider.GetRequiredService<DatabaseInitializer>();
-                await dbInitializer.InitializeDatabaseAsync();
+                await dbInitializer.InitializeDatabaseAsync(); // This will recreate the database with proper schema
 
                 ShowLoginWindow();
 
@@ -105,8 +107,15 @@ namespace OfflinePOS.Admin
             // Register database initializer
             services.AddTransient<DatabaseInitializer>();
 
+            // Register repositories and UoW
+            services.AddTransient(typeof(IRepository<>), typeof(Repository<>));
+            services.AddTransient<IUnitOfWork, UnitOfWork>();
+
             // Register services
             services.AddTransient<IAuthService, AuthService>();
+            services.AddTransient<IProductService, ProductService>();
+            services.AddTransient<ITransactionService, TransactionService>();
+            services.AddTransient<IDrawerService, DrawerService>();
 
             // Register windows - only the LoginView
             services.AddTransient<LoginView>();

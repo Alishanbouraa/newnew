@@ -14,6 +14,7 @@ using OfflinePOS.DataAccess.Repositories;
 using OfflinePOS.DataAccess.Services;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -54,7 +55,7 @@ namespace OfflinePOS.Cashier
                 // Initialize database before showing the login window
                 _logger.LogInformation("Initializing application...");
                 var dbInitializer = _serviceProvider.GetRequiredService<DatabaseInitializer>();
-                await dbInitializer.InitializeDatabaseAsync();
+                await dbInitializer.InitializeDatabaseAsync(); // This will recreate the database with proper schema
 
                 // Show login window
                 ShowLoginWindow();
@@ -155,7 +156,6 @@ namespace OfflinePOS.Cashier
         /// <summary>
         /// Shows the main application window after successful login
         /// </summary>
-        /// 
         private void ShowMainWindow()
         {
             try
@@ -212,6 +212,10 @@ namespace OfflinePOS.Cashier
                 Current.Shutdown();
             }
         }
+
+        /// <summary>
+        /// Ensures all required resources are loaded
+        /// </summary>
         private void EnsureResourcesLoaded()
         {
             try
@@ -219,9 +223,9 @@ namespace OfflinePOS.Cashier
                 // Verify core resources are loaded
                 var coreResourcePaths = new[]
                 {
-            "pack://application:,,,/OfflinePOS.Core;component/Styles/CommonStyles.xaml",
-            "pack://application:,,,/OfflinePOS.Core;component/Converters/ConverterResources.xaml"
-        };
+                    "pack://application:,,,/OfflinePOS.Core;component/Styles/CommonStyles.xaml",
+                    "pack://application:,,,/OfflinePOS.Core;component/Converters/ConverterResources.xaml"
+                };
 
                 foreach (var resourcePath in coreResourcePaths)
                 {

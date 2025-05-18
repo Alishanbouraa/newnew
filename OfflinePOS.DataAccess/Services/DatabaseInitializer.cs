@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.SqlClient;
+﻿// OfflinePOS.DataAccess/Services/DatabaseInitializer.cs
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Core.Models;
@@ -45,48 +46,16 @@ namespace OfflinePOS.DataAccess.Services
             {
                 _logger.LogInformation("Starting database initialization...");
 
-                // Check if database exists and can connect
-                bool dbExists = await _dbContext.Database.CanConnectAsync();
-                _logger.LogInformation($"Database exists: {dbExists}");
+                // For development purposes, delete and recreate the database
+                // This ensures a clean schema without migration conflicts
+                await _dbContext.Database.EnsureDeletedAsync();
+                _logger.LogInformation("Existing database deleted.");
 
-                if (!dbExists)
-                {
-                    _logger.LogInformation("Creating database...");
-                    // Create the database
-                    await _dbContext.Database.EnsureCreatedAsync();
-                    _logger.LogInformation("Database created successfully.");
-                }
-                else
-                {
-                    // Verify database structure even if it exists
-                    bool tablesExist = await CheckTablesExistAsync();
+                // Create a new database with the updated schema
+                await _dbContext.Database.EnsureCreatedAsync();
+                _logger.LogInformation("Database created successfully with updated schema.");
 
-                    if (!tablesExist)
-                    {
-                        _logger.LogWarning("Database exists but tables are missing. Creating schema...");
-                        await _dbContext.Database.EnsureCreatedAsync();
-                        _logger.LogInformation("Schema created successfully.");
-                    }
-                }
-
-                // Verify pending migrations
-                var pendingMigrations = await _dbContext.Database.GetPendingMigrationsAsync();
-                int pendingCount = pendingMigrations.Count();
-                if (pendingCount > 0)
-                {
-                    _logger.LogInformation($"Applying {pendingCount} pending migrations...");
-                    await _dbContext.Database.MigrateAsync();
-                    _logger.LogInformation("All migrations applied successfully.");
-                }
-                else
-                {
-                    _logger.LogInformation("No pending migrations found.");
-                }
-
-                // Verify database schema
-                await VerifyDatabaseSchemaAsync();
-
-                // Seed initial data if needed
+                // Seed initial data
                 await SeedInitialDataAsync();
 
                 _logger.LogInformation("Database initialization completed successfully");
@@ -115,6 +84,7 @@ namespace OfflinePOS.DataAccess.Services
                 return false;
             }
         }
+
         /// <summary>
         /// Verifies the database schema exists correctly
         /// </summary>
@@ -163,7 +133,7 @@ namespace OfflinePOS.DataAccess.Services
                     PasswordSalt = Convert.ToBase64String(salt),
                     FullName = "System Administrator",
                     Role = "Admin",
-                    JobTitle = "Administrator", // Add this line to provide JobTitle value
+                    JobTitle = "Administrator",
                     CreatedById = 1, // Self-reference as there's no other user yet
                     IsActive = true
                 };
@@ -171,6 +141,31 @@ namespace OfflinePOS.DataAccess.Services
                 _dbContext.Users.Add(adminUser);
                 await _dbContext.SaveChangesAsync();
                 _logger.LogInformation("Admin user created successfully");
+            }
+
+            // Seed cashier user for testing
+            if (!await _dbContext.Users.AnyAsync(u => u.Role == "Cashier"))
+            {
+                _logger.LogInformation("Seeding test cashier user...");
+
+                var salt = GenerateSalt();
+                var passwordHash = HashPassword("Cashier@123", salt);
+
+                var cashierUser = new User
+                {
+                    Username = "cashier",
+                    PasswordHash = passwordHash,
+                    PasswordSalt = Convert.ToBase64String(salt),
+                    FullName = "Test Cashier",
+                    Role = "Cashier",
+                    JobTitle = "Cashier",
+                    CreatedById = 1, // Created by admin
+                    IsActive = true
+                };
+
+                _dbContext.Users.Add(cashierUser);
+                await _dbContext.SaveChangesAsync();
+                _logger.LogInformation("Cashier user created successfully");
             }
 
             // Seed company settings if not exists
@@ -195,6 +190,60 @@ namespace OfflinePOS.DataAccess.Services
                 _dbContext.CompanySettings.Add(companySettings);
                 await _dbContext.SaveChangesAsync();
                 _logger.LogInformation("Company settings created successfully");
+            }
+
+            // Seed basic product categories
+            if (!await _dbContext.Categories.AnyAsync())
+            {
+                _logger.LogInformation("Seeding basic product categories...");
+
+                var categories = new[]
+                {
+                    new Category
+                    {
+                        Name = "Beverages",
+                        Type = "Product",
+                        Description = "Drinks and liquid refreshments",
+                        CreatedById = 1,
+                        IsActive = true
+                    },
+                    new Category
+                    {
+                        Name = "Food",
+                        Type = "Product",
+                        Description = "Edible items and snacks",
+                        CreatedById = 1,
+                        IsActive = true
+                    },
+                    new Category
+                    {
+                        Name = "Electronics",
+                        Type = "Product",
+                        Description = "Electronic devices and accessories",
+                        CreatedById = 1,
+                        IsActive = true
+                    },
+                    new Category
+                    {
+                        Name = "Utilities",
+                        Type = "Expense",
+                        Description = "Utility expenses like electricity, water, etc.",
+                        CreatedById = 1,
+                        IsActive = true
+                    },
+                    new Category
+                    {
+                        Name = "Rent",
+                        Type = "Expense",
+                        Description = "Rent and space-related expenses",
+                        CreatedById = 1,
+                        IsActive = true
+                    }
+                };
+
+                _dbContext.Categories.AddRange(categories);
+                await _dbContext.SaveChangesAsync();
+                _logger.LogInformation("Product categories created successfully");
             }
         }
 

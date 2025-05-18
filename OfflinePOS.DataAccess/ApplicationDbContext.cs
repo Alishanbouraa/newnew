@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿// OfflinePOS.DataAccess/ApplicationDbContext.cs
+using Microsoft.EntityFrameworkCore;
 using OfflinePOS.Core.Models;
 using System;
 using System.Threading;
@@ -25,6 +26,50 @@ namespace OfflinePOS.DataAccess
         /// Users/employees
         /// </summary>
         public DbSet<User> Users { get; set; }
+
+        /// <summary>
+        /// Categories
+        /// </summary>
+        public DbSet<Category> Categories { get; set; }
+
+        /// <summary>
+        /// Products
+        /// </summary>
+        public DbSet<Product> Products { get; set; }
+
+        /// <summary>
+        /// Customers
+        /// </summary>
+        public DbSet<Customer> Customers { get; set; }
+
+        /// <summary>
+        /// Transactions
+        /// </summary>
+        public DbSet<Transaction> Transactions { get; set; }
+
+        /// <summary>
+        /// Transaction items
+        /// </summary>
+        public DbSet<TransactionItem> TransactionItems { get; set; }
+
+        /// <summary>
+        /// Drawer operations
+        /// </summary>
+        public DbSet<DrawerOperation> DrawerOperations { get; set; }
+
+        /// <summary>
+        /// Drawer transactions
+        /// </summary>
+        public DbSet<DrawerTransaction> DrawerTransactions { get; set; }
+
+        /// <summary>
+        /// Creates a new instance of ApplicationDbContext
+        /// </summary>
+        /// <param name="options">The options to be used by the DbContext</param>
+        public ApplicationDbContext(DbContextOptionsBuilder<ApplicationDbContext> options)
+            : base(options.Options)
+        {
+        }
 
         /// <summary>
         /// Creates a new instance of ApplicationDbContext
@@ -98,11 +143,197 @@ namespace OfflinePOS.DataAccess
                 .Property(c => c.DollarRate)
                 .HasColumnType("decimal(18,4)");
 
-            // You could add more decimal precision configurations here if needed
-            // For example, if there are other decimal properties in the model
+            // Configure Product entity
+            modelBuilder.Entity<Product>()
+                .ToTable("Products")
+                .Property(p => p.RowVersion)
+                .IsRowVersion();
+
+            // Configure decimal precision for Product entity
+            modelBuilder.Entity<Product>()
+                .Property(p => p.BoxPurchasePrice)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Product>()
+                .Property(p => p.BoxWholesalePrice)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Product>()
+                .Property(p => p.BoxSalePrice)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Product>()
+                .Property(p => p.ItemPurchasePrice)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Product>()
+                .Property(p => p.ItemWholesalePrice)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Product>()
+                .Property(p => p.ItemSalePrice)
+                .HasColumnType("decimal(18,2)");
+
+            // Configure Category entity
+            modelBuilder.Entity<Category>()
+                .ToTable("Categories")
+                .Property(c => c.RowVersion)
+                .IsRowVersion();
+
+            // Configure Customer entity
+            modelBuilder.Entity<Customer>()
+                .ToTable("Customers")
+                .Property(c => c.RowVersion)
+                .IsRowVersion();
+
+            // Configure decimal precision for Customer entity
+            modelBuilder.Entity<Customer>()
+                .Property(c => c.CurrentBalance)
+                .HasColumnType("decimal(18,2)");
+
+            // Configure Transaction entity
+            modelBuilder.Entity<Transaction>()
+                .ToTable("Transactions")
+                .Property(t => t.RowVersion)
+                .IsRowVersion();
+
+            // Configure decimal precision for Transaction entity
+            modelBuilder.Entity<Transaction>()
+                .Property(t => t.Subtotal)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Transaction>()
+                .Property(t => t.DiscountPercentage)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Transaction>()
+                .Property(t => t.DiscountAmount)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Transaction>()
+                .Property(t => t.TaxPercentage)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Transaction>()
+                .Property(t => t.TaxAmount)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Transaction>()
+                .Property(t => t.Total)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Transaction>()
+                .Property(t => t.PaidAmount)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Transaction>()
+                .Property(t => t.RemainingBalance)
+                .HasColumnType("decimal(18,2)");
+
+            // Configure TransactionItem entity
+            modelBuilder.Entity<TransactionItem>()
+                .ToTable("TransactionItems")
+                .Property(ti => ti.RowVersion)
+                .IsRowVersion();
+
+            // Configure decimal precision for TransactionItem entity
+            modelBuilder.Entity<TransactionItem>()
+                .Property(ti => ti.UnitPrice)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<TransactionItem>()
+                .Property(ti => ti.DiscountPercentage)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<TransactionItem>()
+                .Property(ti => ti.DiscountAmount)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<TransactionItem>()
+                .Property(ti => ti.TaxPercentage)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<TransactionItem>()
+                .Property(ti => ti.TaxAmount)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<TransactionItem>()
+                .Property(ti => ti.TotalAmount)
+                .HasColumnType("decimal(18,2)");
+
+            // Configure DrawerOperation entity
+            modelBuilder.Entity<DrawerOperation>()
+                .ToTable("DrawerOperations")
+                .Property(d => d.RowVersion)
+                .IsRowVersion();
+
+            // Configure decimal precision for DrawerOperation entity
+            modelBuilder.Entity<DrawerOperation>()
+                .Property(d => d.StartingBalance)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<DrawerOperation>()
+                .Property(d => d.EndingBalance)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<DrawerOperation>()
+                .Property(d => d.ExpectedBalance)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<DrawerOperation>()
+                .Property(d => d.Difference)
+                .HasColumnType("decimal(18,2)");
+
+            // Configure DrawerTransaction entity
+            modelBuilder.Entity<DrawerTransaction>()
+                .ToTable("DrawerTransactions")
+                .Property(dt => dt.RowVersion)
+                .IsRowVersion();
+
+            // Configure decimal precision for DrawerTransaction entity
+            modelBuilder.Entity<DrawerTransaction>()
+                .Property(dt => dt.Amount)
+                .HasColumnType("decimal(18,2)");
+
+            // Configure relationships
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Category)
+                .WithMany()
+                .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.User)
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.Customer)
+                .WithMany()
+                .HasForeignKey(t => t.CustomerId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.DrawerOperation)
+                .WithMany(d => d.Transactions)
+                .HasForeignKey(t => t.DrawerOperationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TransactionItem>()
+                .HasOne(ti => ti.Transaction)
+                .WithMany(t => t.Items)
+                .HasForeignKey(ti => ti.TransactionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TransactionItem>()
+                .HasOne(ti => ti.Product)
+                .WithMany()
+                .HasForeignKey(ti => ti.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DrawerOperation>()
+                .HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DrawerTransaction>()
+                .HasOne(dt => dt.DrawerOperation)
+                .WithMany(d => d.DrawerTransactions)
+                .HasForeignKey(dt => dt.DrawerOperationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DrawerTransaction>()
+                .HasOne(dt => dt.RecordedBy)
+                .WithMany()
+                .HasForeignKey(dt => dt.RecordedById)
+                .OnDelete(DeleteBehavior.Restrict);
 
             base.OnModelCreating(modelBuilder);
         }
+
         /// <summary>
         /// Saves all changes made in this context to the database with audit information
         /// </summary>
