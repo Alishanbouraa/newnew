@@ -84,6 +84,10 @@ namespace OfflinePOS.Cashier.ViewModels
         public ICommand OpenDrawerCommand { get; }
 
         /// <summary>
+        /// Command for logging out of the application
+        /// </summary>
+        public ICommand LogoutCommand { get; }
+        /// <summary>
         /// Command for closing the drawer
         /// </summary>
         public ICommand CloseDrawerCommand { get; }
@@ -114,10 +118,10 @@ namespace OfflinePOS.Cashier.ViewModels
         /// <param name="logger">Logger</param>
         /// <param name="currentUser">Current user</param>
         public DrawerViewModel(
-            IDrawerService drawerService,
-            ILogger<DrawerViewModel> logger,
-            User currentUser)
-            : base(logger)
+     IDrawerService drawerService,
+     ILogger<DrawerViewModel> logger,
+     User currentUser)
+     : base(logger)
         {
             _drawerService = drawerService ?? throw new ArgumentNullException(nameof(drawerService));
             _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
@@ -129,8 +133,14 @@ namespace OfflinePOS.Cashier.ViewModels
             CashOutCommand = new AsyncRelayCommand(_ => CashOutAsync(), CanManageCash);
             ViewShiftDetailsCommand = new RelayCommand(_ => ViewShiftDetails(), CanViewShiftDetails);
             NavigateToSalesCommand = new RelayCommand(_ => NavigateToSales(), _ => IsDrawerOpen);
+            LogoutCommand = new RelayCommand(_ => Logout());
         }
-
+        private void Logout()
+        {
+            // Raise the NavigationRequested event for logout
+            RequestNavigation("Logout");
+            _logger.LogInformation("User requested logout");
+        }
         /// <summary>
         /// Initializes the ViewModel
         /// </summary>

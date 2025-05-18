@@ -14,6 +14,7 @@
             <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
             <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
             <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+            <converters:StringToDecimalConverter x:Key="StringToDecimalConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -190,9 +191,10 @@
                             <TextBlock Text="Amount:" 
                                        Margin="0,5"/>
 
-                            <TextBox Text="{Binding CashOutAmount, UpdateSourceTrigger=PropertyChanged}" 
-                                     Padding="5" 
-                                     Margin="0,0,0,10"/>
+                            <TextBox Text="{Binding CashOutAmount, UpdateSourceTrigger=PropertyChanged, 
+                Converter={StaticResource StringToDecimalConverter}}" 
+         Padding="5" 
+         Margin="0,0,0,10"/>
 
                             <TextBlock Text="Reason:" 
                                        Margin="0,5"/>
