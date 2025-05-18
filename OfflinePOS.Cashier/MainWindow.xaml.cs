@@ -1,13 +1,13 @@
-﻿using System.Text;
+﻿// OfflinePOS.Cashier/MainWindow.xaml.cs
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using OfflinePOS.Cashier.ViewModels;
+using OfflinePOS.Cashier.Views;
+using OfflinePOS.Core.Models;
+using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace OfflinePOS.Cashier
 {
@@ -16,9 +16,113 @@ namespace OfflinePOS.Cashier
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow()
+        private readonly IServiceProvider _serviceProvider;
+        private readonly User _currentUser;
+        private readonly ILogger<MainWindow> _logger;
+
+        /// <summary>
+        /// Initializes a new instance of the MainWindow class
+        /// </summary>
+        /// <param name="serviceProvider">Service provider</param>
+        /// <param name="currentUser">Current authenticated user</param>
+        /// <param name="logger">Logger</param>
+        public MainWindow(IServiceProvider serviceProvider, User currentUser, ILogger<MainWindow> logger)
         {
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
             InitializeComponent();
+
+            // Set user information
+            UserText.Text = $"User: {_currentUser.FullName} ({_currentUser.Role})";
+
+            Loaded += MainWindow_Loaded;
+        }
+
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                StatusText.Text = "Checking drawer status...";
+
+                // Check if drawer is open
+                var drawerViewModel = _serviceProvider.GetRequiredService<DrawerViewModel>();
+                await drawerViewModel.InitializeAsync();
+
+                // If no drawer is open, show drawer view first
+                if (!drawerViewModel.IsDrawerOpen)
+                {
+                    _logger.LogInformation("No open drawer found, navigating to DrawerView");
+                    StatusText.Text = "No open drawer. Please open a drawer to continue.";
+                    NavigateToView<DrawerView, DrawerViewModel>();
+                }
+                else
+                {
+                    // Otherwise, show sales view
+                    _logger.LogInformation("Open drawer found, navigating to SalesView");
+                    StatusText.Text = "Drawer open. Ready for sales.";
+                    NavigateToView<SalesView, SalesViewModel>();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading main window");
+                StatusText.Text = "Error initializing application";
+                MessageBox.Show($"Error initializing application: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Navigates to the specified view and initializes its ViewModel
+        /// </summary>
+        /// <typeparam name="TView">View type</typeparam>
+        /// <typeparam name="TViewModel">ViewModel type</typeparam>
+        private void NavigateToView<TView, TViewModel>()
+            where TView : UserControl
+            where TViewModel : ViewModelBase
+        {
+            try
+            {
+                _logger.LogInformation($"Navigating to {typeof(TView).Name}");
+
+                // Get the ViewModel from service provider
+                var viewModel = _serviceProvider.GetRequiredService<TViewModel>();
+
+                // Create the view with the ViewModel
+                var view = (TView)Activator.CreateInstance(typeof(TView), viewModel);
+
+                // Set it as the current content
+                MainContent.Content = view;
+
+                // If the ViewModel has an InitializeAsync method, call it
+                if (viewModel.GetType().GetMethod("InitializeAsync") != null)
+                {
+                    // Assuming it returns a Task
+                    var initMethod = viewModel.GetType().GetMethod("InitializeAsync");
+                    var task = (Task)initMethod.Invoke(viewModel, null);
+                    task.ConfigureAwait(false); // We don't need to await it here
+                }
+
+                _logger.LogInformation($"Successfully navigated to {typeof(TView).Name}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error navigating to {typeof(TView).Name}");
+                StatusText.Text = $"Navigation error: {ex.Message}";
+                MessageBox.Show($"Error loading view: {ex.Message}", "Navigation Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Updates the status bar text
+        /// </summary>
+        /// <param name="statusMessage">Status message to display</param>
+        public void UpdateStatus(string statusMessage)
+        {
+            StatusText.Text = statusMessage;
         }
     }
 }

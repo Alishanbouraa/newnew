@@ -4,9 +4,34 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OfflinePOS.Cashier"
+        xmlns:converters="clr-namespace:OfflinePOS.Core.Converters;assembly=OfflinePOS.Core"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="POS Cashier" 
+        Height="768" 
+        Width="1024" 
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized">
 
+    <Window.Resources>
+        <ResourceDictionary>
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+            <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid>
+        <!-- Main content area -->
+        <ContentControl x:Name="MainContent" />
+
+        <!-- Status bar -->
+        <StatusBar Height="25" VerticalAlignment="Bottom">
+            <StatusBarItem>
+                <TextBlock x:Name="StatusText" Text="Ready" />
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <TextBlock x:Name="UserText" />
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>

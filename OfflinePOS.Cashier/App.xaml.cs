@@ -1,8 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿// OfflinePOS.Cashier/App.xaml.cs
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OfflinePOS.Cashier.ViewModels;
+using OfflinePOS.Cashier.Views;
+using OfflinePOS.Core.Models;
+using OfflinePOS.Core.Repositories;
+using OfflinePOS.Core.Services;
+using OfflinePOS.Core.ViewModels;
 using OfflinePOS.DataAccess;
+using OfflinePOS.DataAccess.Repositories;
 using OfflinePOS.DataAccess.Services;
 using System;
 using System.IO;
@@ -19,9 +27,16 @@ namespace OfflinePOS.Cashier
         private IServiceProvider _serviceProvider;
         private IConfiguration _configuration;
         private ILogger<App> _logger;
+        private User _currentUser;
 
+        /// <summary>
+        /// Application startup
+        /// </summary>
         protected override async void OnStartup(StartupEventArgs e)
         {
+            // Configure application shutdown mode to prevent automatic termination
+            Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
@@ -36,13 +51,13 @@ namespace OfflinePOS.Cashier
 
             try
             {
-                // Initialize database before showing the main window
+                // Initialize database before showing the login window
                 _logger.LogInformation("Initializing application...");
                 var dbInitializer = _serviceProvider.GetRequiredService<DatabaseInitializer>();
                 await dbInitializer.InitializeDatabaseAsync();
 
-                var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
-                mainWindow.Show();
+                // Show login window
+                ShowLoginWindow();
 
                 _logger.LogInformation("Application started successfully");
             }
@@ -55,6 +70,9 @@ namespace OfflinePOS.Cashier
             }
         }
 
+        /// <summary>
+        /// Configures application services
+        /// </summary>
         private void ConfigureServices(IServiceCollection services)
         {
             // Register logging
@@ -81,13 +99,111 @@ namespace OfflinePOS.Cashier
                     }),
                     ServiceLifetime.Transient);
 
-            // Register database initializer
+            // Register repositories and UoW
+            services.AddTransient(typeof(IRepository<>), typeof(Repository<>));
+            services.AddTransient<IUnitOfWork, UnitOfWork>();
+
+            // Register services
             services.AddTransient<DatabaseInitializer>();
+            services.AddTransient<IAuthService, AuthService>();
+            services.AddTransient<IProductService, ProductService>();
+            services.AddTransient<ITransactionService, TransactionService>();
+            services.AddTransient<IDrawerService, DrawerService>();
 
-            // Register windows
-            services.AddTransient<MainWindow>();
+            // Register ViewModels
+            services.AddTransient(provider =>
+                new LoginViewModel(
+                    provider.GetRequiredService<IAuthService>(),
+                    user =>
+                    {
+                        _currentUser = user;
+                        ShowMainWindow();
+                    }));
 
-            // Register other services here
+            services.AddTransient(provider =>
+                new SalesViewModel(
+                    provider.GetRequiredService<IProductService>(),
+                    provider.GetRequiredService<ITransactionService>(),
+                    provider.GetRequiredService<IDrawerService>(),
+                    provider.GetRequiredService<IAuthService>(),
+                    provider.GetRequiredService<ILogger<SalesViewModel>>(),
+                    _currentUser));
+
+            services.AddTransient(provider =>
+                new DrawerViewModel(
+                    provider.GetRequiredService<IDrawerService>(),
+                    provider.GetRequiredService<ILogger<DrawerViewModel>>(),
+                    _currentUser));
+
+            // Register views
+            services.AddTransient<LoginView>();
+            services.AddTransient<SalesView>();
+            services.AddTransient<DrawerView>();
         }
+
+        /// <summary>
+        /// Shows the login window
+        /// </summary>
+        private void ShowLoginWindow()
+        {
+            var loginWindow = _serviceProvider.GetRequiredService<LoginView>();
+            loginWindow.Show();
+        }
+
+        /// <summary>
+        /// Shows the main application window after successful login
+        /// </summary>
+        private void ShowMainWindow()
+        {
+            try
+            {
+                // Close login window
+                foreach (Window window in Current.Windows)
+                {
+                    if (window is LoginView)
+                    {
+                        window.Close();
+                    }
+                }
+
+                // Set current user in the DbContext
+                var dbContext = _serviceProvider.GetRequiredService<ApplicationDbContext>();
+                dbContext.CurrentUserId = _currentUser.Id;
+
+                // Create and show main window
+                _logger.LogInformation($"Creating main window for user: {_currentUser.Username}");
+                var mainWindow = new MainWindow(_serviceProvider, _currentUser, _serviceProvider.GetRequiredService<ILogger<MainWindow>>());
+
+                // Set up navigation handlers
+                var salesViewModel = _serviceProvider.GetRequiredService<SalesViewModel>();
+                var drawerViewModel = _serviceProvider.GetRequiredService<DrawerViewModel>();
+
+                salesViewModel.NavigationRequested += (sender, args) => {
+                    if (args.ViewName == "DrawerView")
+                        mainWindow.NavigateToView<DrawerView, DrawerViewModel>();
+                };
+
+                drawerViewModel.NavigationRequested += (sender, args) => {
+                    if (args.ViewName == "SalesView")
+                        mainWindow.NavigateToView<SalesView, SalesViewModel>();
+                };
+
+                // Set as application's main window
+                Application.Current.MainWindow = mainWindow;
+                Current.Properties["MainWindow"] = mainWindow;
+
+                mainWindow.Show();
+
+                _logger.LogInformation($"Main window opened for user: {_currentUser.Username}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error showing main window after login");
+                MessageBox.Show($"Error opening main application window: {ex.Message}\n\nPlease restart the application.",
+                                 "Application Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Current.Shutdown();
+            }
+        }
+
     }
 }

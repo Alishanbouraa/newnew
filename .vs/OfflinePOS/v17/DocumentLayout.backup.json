@@ -1,12 +1,36 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\$\\Desktop\\OfflinePOS\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{E262B874-A19C-4658-9807-CE2F2499B4DD}|OfflinePOS.Cashier\\OfflinePOS.Cashier.csproj|c:\\users\\$\\desktop\\offlinepos\\offlinepos.cashier\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{E262B874-A19C-4658-9807-CE2F2499B4DD}|OfflinePOS.Cashier\\OfflinePOS.Cashier.csproj|solutionrelative:offlinepos.cashier\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "MainWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Cashier\\MainWindow.xaml",
+              "RelativeDocumentMoniker": "OfflinePOS.Cashier\\MainWindow.xaml",
+              "ToolTip": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Cashier\\MainWindow.xaml",
+              "RelativeToolTip": "OfflinePOS.Cashier\\MainWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-05-18T14:25:34.042Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }
