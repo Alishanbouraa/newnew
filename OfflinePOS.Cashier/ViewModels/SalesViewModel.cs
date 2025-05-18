@@ -4,6 +4,7 @@ using OfflinePOS.Core.Models;
 using OfflinePOS.Core.MVVM;
 using OfflinePOS.Core.Services;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ namespace OfflinePOS.Cashier.ViewModels
         private readonly ITransactionService _transactionService;
         private readonly IDrawerService _drawerService;
         private readonly IAuthService _authService;
-        private readonly User _currentUser;
+        private readonly INavigationService _navigationService;
         private DrawerOperation _currentDrawer;
 
         private ObservableCollection<Product> _products;
@@ -39,6 +40,21 @@ namespace OfflinePOS.Cashier.ViewModels
         private decimal _change;
         private string _paymentMethod;
         private bool _isDrawerOpen;
+        private ObservableCollection<string> _paymentMethods;
+
+        /// <summary>
+        /// Current authenticated user
+        /// </summary>
+        public User CurrentUser { get; }
+
+        /// <summary>
+        /// Available payment methods
+        /// </summary>
+        public ObservableCollection<string> PaymentMethods
+        {
+            get => _paymentMethods;
+            set => SetProperty(ref _paymentMethods, value);
+        }
 
         /// <summary>
         /// Collection of products matching the search criteria
@@ -247,6 +263,7 @@ namespace OfflinePOS.Cashier.ViewModels
         /// Command for logging out
         /// </summary>
         public ICommand LogoutCommand { get; }
+
         /// <summary>
         /// Command for selecting a customer
         /// </summary>
@@ -271,25 +288,39 @@ namespace OfflinePOS.Cashier.ViewModels
         /// <param name="authService">Authentication service</param>
         /// <param name="logger">Logger</param>
         /// <param name="currentUser">Current user</param>
+        /// <param name="navigationService">Navigation service</param>
         public SalesViewModel(
             IProductService productService,
             ITransactionService transactionService,
             IDrawerService drawerService,
             IAuthService authService,
             ILogger<SalesViewModel> logger,
-            User currentUser)
+            User currentUser,
+            INavigationService navigationService)
             : base(logger)
         {
             _productService = productService ?? throw new ArgumentNullException(nameof(productService));
             _transactionService = transactionService ?? throw new ArgumentNullException(nameof(transactionService));
             _drawerService = drawerService ?? throw new ArgumentNullException(nameof(drawerService));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-            _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
+            _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+
+            // Initialize CurrentUser property
+            CurrentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
 
             // Initialize collections
             Products = new ObservableCollection<Product>();
             CartItems = new ObservableCollection<TransactionItemViewModel>();
             Customers = new ObservableCollection<Customer>();
+
+            // Initialize PaymentMethods collection
+            PaymentMethods = new ObservableCollection<string>
+            {
+                "Cash",
+                "Credit Card",
+                "Debit Card",
+                "Credit"
+            };
 
             // Initialize commands
             SearchProductsCommand = new AsyncRelayCommand(_ => SearchProductsAsync());
@@ -301,8 +332,11 @@ namespace OfflinePOS.Cashier.ViewModels
             SelectCustomerCommand = new RelayCommand(_ => SelectCustomer());
             ProcessPaymentCommand = new AsyncRelayCommand(_ => ProcessPaymentAsync(), CanProcessPayment);
             PrintReceiptCommand = new RelayCommand(PrintReceipt, CanPrintReceipt);
+
+            // Update navigation commands to use the navigation service
             NavigateToDrawerCommand = new RelayCommand(_ => NavigateToDrawer());
             LogoutCommand = new RelayCommand(_ => Logout());
+
             // Set default values
             PaymentMethod = "Cash";
             TaxPercentage = 11; // Default tax rate (e.g., for Lebanon)
@@ -324,7 +358,7 @@ namespace OfflinePOS.Cashier.ViewModels
             await ExecuteWithLoadingAsync(
                 async () =>
                 {
-                    _currentDrawer = await _drawerService.GetOpenDrawerForUserAsync(_currentUser.Id);
+                    _currentDrawer = await _drawerService.GetOpenDrawerForUserAsync(CurrentUser.Id);
                     IsDrawerOpen = _currentDrawer != null;
                     return true;
                 },
@@ -429,17 +463,33 @@ namespace OfflinePOS.Cashier.ViewModels
         /// </summary>
         private void NavigateToDrawer()
         {
-            // This will be handled by the application shell
-            _logger.LogInformation("Requested navigation to drawer view");
+            try
+            {
+                _logger.LogInformation("Navigating to DrawerView");
+                _navigationService.NavigateTo("DrawerView");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error navigating to DrawerView");
+                ErrorMessage = "Navigation error. Please try again.";
+            }
         }
 
         /// <summary>
-        /// Logs out the current user
+        /// Logs out of the application
         /// </summary>
         private void Logout()
         {
-            // This will be handled by the application shell
-            _logger.LogInformation("Requested logout");
+            try
+            {
+                _logger.LogInformation("Logging out user");
+                _navigationService.Logout();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during logout");
+                ErrorMessage = "Logout error. Please try again.";
+            }
         }
 
         /// <summary>
@@ -468,7 +518,6 @@ namespace OfflinePOS.Cashier.ViewModels
         /// <summary>
         /// Processes the payment for the transaction
         /// </summary>
-        // Continuing implementation of ProcessPaymentAsync in OfflinePOS.Cashier/ViewModels/SalesViewModel.cs
         private async Task ProcessPaymentAsync()
         {
             if (!CartItems.Any())
@@ -480,7 +529,7 @@ namespace OfflinePOS.Cashier.ViewModels
                     // Create transaction
                     var transaction = new Transaction
                     {
-                        UserId = _currentUser.Id,
+                        UserId = CurrentUser.Id,
                         CustomerId = SelectedCustomer?.Id,
                         DrawerOperationId = _currentDrawer.Id,
                         InvoiceNumber = await _transactionService.GenerateInvoiceNumberAsync(),

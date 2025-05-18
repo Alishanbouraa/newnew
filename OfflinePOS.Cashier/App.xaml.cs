@@ -1,8 +1,9 @@
-﻿// File: OfflinePOS.Cashier/App.xaml.cs
+﻿// OfflinePOS.Cashier/App.xaml.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OfflinePOS.Cashier.Services;           // Add this using directive
 using OfflinePOS.Cashier.ViewModels;
 using OfflinePOS.Cashier.Views;
 using OfflinePOS.Core.Models;
@@ -112,7 +113,11 @@ namespace OfflinePOS.Cashier
             services.AddTransient<ITransactionService, TransactionService>();
             services.AddTransient<IDrawerService, DrawerService>();
 
-            // Register ViewModels
+            // Register NavigationService as a singleton
+            services.AddSingleton<NavigationService>();
+            services.AddSingleton<INavigationService>(provider => provider.GetRequiredService<NavigationService>());
+
+            // Register LoginViewModel
             services.AddTransient(provider =>
                 new LoginViewModel(
                     provider.GetRequiredService<IAuthService>(),
@@ -122,6 +127,7 @@ namespace OfflinePOS.Cashier
                         ShowMainWindow();
                     }));
 
+            // Register ViewModels with dependency on INavigationService
             services.AddTransient(provider =>
                 new SalesViewModel(
                     provider.GetRequiredService<IProductService>(),
@@ -129,13 +135,15 @@ namespace OfflinePOS.Cashier
                     provider.GetRequiredService<IDrawerService>(),
                     provider.GetRequiredService<IAuthService>(),
                     provider.GetRequiredService<ILogger<SalesViewModel>>(),
-                    _currentUser));
+                    _currentUser,
+                    provider.GetRequiredService<INavigationService>()));
 
             services.AddTransient(provider =>
                 new DrawerViewModel(
                     provider.GetRequiredService<IDrawerService>(),
                     provider.GetRequiredService<ILogger<DrawerViewModel>>(),
-                    _currentUser));
+                    _currentUser,
+                    provider.GetRequiredService<INavigationService>()));
 
             // Register views
             services.AddTransient<LoginView>();
@@ -174,78 +182,53 @@ namespace OfflinePOS.Cashier
                 var dbContext = _serviceProvider.GetRequiredService<ApplicationDbContext>();
                 dbContext.CurrentUserId = _currentUser.Id;
 
-                // Create and show main window - MANUALLY CREATE it with the required dependencies
+                // Create main window
                 _logger.LogInformation($"Creating main window for user: {_currentUser.Username}");
 
-                // Create main window with dependencies - don't use DI container to instantiate it
+                // Create main window with dependencies
                 var mainWindow = new MainWindow(
                     _serviceProvider,
                     _currentUser,
                     _serviceProvider.GetRequiredService<ILogger<MainWindow>>());
 
-                // Set up navigation handlers with proper cleanup
-                var salesViewModel = _serviceProvider.GetRequiredService<SalesViewModel>();
-                var drawerViewModel = _serviceProvider.GetRequiredService<DrawerViewModel>();
-
-                // Clear any existing event handlers to prevent accumulation
-                ClearEventSubscribers(salesViewModel);
-                ClearEventSubscribers(drawerViewModel);
-
-                // Add single event handler to each ViewModel with proper scope
-                salesViewModel.NavigationRequested += HandleSalesViewModelNavigation;
-                drawerViewModel.NavigationRequested += HandleDrawerViewModelNavigation;
-
-                // Store navigation handlers to maintain references
-                void HandleSalesViewModelNavigation(object sender, ViewModelBase.NavigationEventArgs args)
-                {
-                    _logger.LogInformation($"Sales navigation requested to: {args.ViewName}");
-
-                    if (args.ViewName == "DrawerView")
-                    {
-                        mainWindow.NavigateToView<DrawerView, DrawerViewModel>();
-                    }
-                    else if (args.ViewName == "Logout")
-                    {
-                        // Handle logout
-                        CleanupViewModels();
-                        ShowLoginWindow();
-                        mainWindow.Close();
-                    }
-                }
-
-                void HandleDrawerViewModelNavigation(object sender, ViewModelBase.NavigationEventArgs args)
-                {
-                    _logger.LogInformation($"Drawer navigation requested to: {args.ViewName}");
-
-                    if (args.ViewName == "SalesView" || args.ViewName == "Sales")
-                    {
-                        mainWindow.NavigateToView<SalesView, SalesViewModel>();
-                    }
-                    else if (args.ViewName == "Logout")
-                    {
-                        // Handle logout
-                        CleanupViewModels();
-                        ShowLoginWindow();
-                        mainWindow.Close();
-                    }
-                }
-
-                void CleanupViewModels()
-                {
-                    salesViewModel.NavigationRequested -= HandleSalesViewModelNavigation;
-                    drawerViewModel.NavigationRequested -= HandleDrawerViewModelNavigation;
-                    salesViewModel.Cleanup();
-                    drawerViewModel.Cleanup();
-                }
+                // Initialize the navigation service with the main window
+                var navigationService = _serviceProvider.GetRequiredService<NavigationService>();
+                navigationService.Initialize(mainWindow, _currentUser);
 
                 // Set as application's main window
                 Application.Current.MainWindow = mainWindow;
                 Current.Properties["MainWindow"] = mainWindow;
 
-                // Store cleanup method for window closing
-                mainWindow.Closed += (s, e) => CleanupViewModels();
-
                 mainWindow.Show();
+
+                // Check drawer status and navigate to appropriate view
+                var drawerService = _serviceProvider.GetRequiredService<IDrawerService>();
+                drawerService.GetOpenDrawerForUserAsync(_currentUser.Id)
+                    .ContinueWith(task =>
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            try
+                            {
+                                var openDrawer = task.Result;
+                                if (openDrawer != null)
+                                {
+                                    // If drawer is open, navigate to sales view
+                                    navigationService.NavigateTo("SalesView");
+                                }
+                                else
+                                {
+                                    // If no drawer is open, navigate to drawer view
+                                    navigationService.NavigateTo("DrawerView");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Error during initial navigation");
+                                mainWindow.StatusText.Text = "Error: Could not determine drawer status";
+                            }
+                        });
+                    });
 
                 _logger.LogInformation($"Main window opened for user: {_currentUser.Username}");
             }
@@ -253,7 +236,7 @@ namespace OfflinePOS.Cashier
             {
                 _logger.LogError(ex, "Error showing main window after login");
                 MessageBox.Show($"Error opening main application window: {ex.Message}\n\nPlease restart the application.",
-                                 "Application Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                "Application Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Current.Shutdown();
             }
         }

@@ -1,5 +1,4 @@
-﻿// File: OfflinePOS.Core/Services/INavigationService.cs
-
+﻿// OfflinePOS.Core/Services/INavigationService.cs
 namespace OfflinePOS.Core.Services
 {
     /// <summary>

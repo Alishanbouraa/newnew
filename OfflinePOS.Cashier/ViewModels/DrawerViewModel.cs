@@ -1,10 +1,11 @@
-﻿// File: OfflinePOS.Cashier/ViewModels/DrawerViewModel.cs
+﻿// OfflinePOS.Cashier/ViewModels/DrawerViewModel.cs
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.MVVM;
 using OfflinePOS.Core.Services;
 using System;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
 namespace OfflinePOS.Cashier.ViewModels
@@ -16,6 +17,7 @@ namespace OfflinePOS.Cashier.ViewModels
     {
         private readonly IDrawerService _drawerService;
         private readonly User _currentUser;
+        private readonly INavigationService _navigationService;
 
         private DrawerOperation _currentDrawer;
         private decimal _drawerBalance;
@@ -120,14 +122,17 @@ namespace OfflinePOS.Cashier.ViewModels
         /// <param name="drawerService">Drawer service</param>
         /// <param name="logger">Logger</param>
         /// <param name="currentUser">Current user</param>
+        /// <param name="navigationService">Navigation service</param>
         public DrawerViewModel(
             IDrawerService drawerService,
             ILogger<DrawerViewModel> logger,
-            User currentUser)
+            User currentUser,
+            INavigationService navigationService)
             : base(logger)
         {
             _drawerService = drawerService ?? throw new ArgumentNullException(nameof(drawerService));
             _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
+            _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
 
             // Initialize commands
             OpenDrawerCommand = new AsyncRelayCommand(_ => OpenDrawerAsync(), CanOpenDrawer);
@@ -148,11 +153,21 @@ namespace OfflinePOS.Cashier.ViewModels
             _logger.LogDebug("DrawerViewModel cleanup complete");
         }
 
+        /// <summary>
+        /// Logs out of the application
+        /// </summary>
         private void Logout()
         {
-            // Raise the NavigationRequested event for logout
-            RequestNavigation("Logout");
-            _logger.LogInformation("User requested logout");
+            try
+            {
+                _logger.LogInformation("Logging out user");
+                _navigationService.Logout();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during logout");
+                ErrorMessage = "Logout error. Please try again.";
+            }
         }
 
         /// <summary>
@@ -216,11 +231,14 @@ namespace OfflinePOS.Cashier.ViewModels
                 {
                     _logger.LogInformation("Drawer opened with ID: {DrawerId}", CurrentDrawer.Id);
 
-                    // Directly navigate after successful completion without using Task.Delay
-                    if (IsDrawerOpen)
+                    // Navigate to sales view after a brief delay
+                    Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        NavigateToSales();
-                    }
+                        if (IsDrawerOpen)
+                        {
+                            NavigateToSales();
+                        }
+                    }), System.Windows.Threading.DispatcherPriority.Background);
                 });
         }
 
@@ -254,9 +272,13 @@ namespace OfflinePOS.Cashier.ViewModels
             try
             {
                 _isNavigating = true;
-                // Request navigation using the standard view name
-                RequestNavigation("SalesView");
-                _logger.LogInformation("Requested navigation to sales view");
+                _logger.LogInformation("Navigating to SalesView");
+                _navigationService.NavigateTo("SalesView");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error navigating to SalesView");
+                ErrorMessage = "Navigation error. Please try again.";
             }
             finally
             {
