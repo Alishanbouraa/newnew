@@ -1,4 +1,4 @@
-﻿// OfflinePOS.Cashier/MainWindow.xaml.cs
+﻿// File: OfflinePOS.Cashier/MainWindow.xaml.cs
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Cashier.ViewModels;
@@ -16,9 +16,6 @@ namespace OfflinePOS.Cashier
     /// </summary>
     public partial class MainWindow : Window
     {
-        // Remove the manually defined UI elements since they're now auto-generated
-        // from XAML with the same names
-
         private readonly IServiceProvider _serviceProvider;
         private readonly User _currentUser;
         private readonly ILogger<MainWindow> _logger;
@@ -35,7 +32,7 @@ namespace OfflinePOS.Cashier
             _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            // Use the auto-generated InitializeComponent method
+            // Initialize the component to load the XAML file
             InitializeComponent();
 
             // Set user information
@@ -59,14 +56,14 @@ namespace OfflinePOS.Cashier
                 {
                     _logger.LogInformation("No open drawer found, navigating to DrawerView");
                     StatusText.Text = "No open drawer. Please open a drawer to continue.";
-                    NavigateToView<DrawerView, DrawerViewModel>();
+                    await NavigateToViewAsync<DrawerView, DrawerViewModel>();
                 }
                 else
                 {
                     // Otherwise, show sales view
                     _logger.LogInformation("Open drawer found, navigating to SalesView");
                     StatusText.Text = "Drawer open. Ready for sales.";
-                    NavigateToView<SalesView, SalesViewModel>();
+                    await NavigateToViewAsync<SalesView, SalesViewModel>();
                 }
             }
             catch (Exception ex)
@@ -79,7 +76,58 @@ namespace OfflinePOS.Cashier
         }
 
         /// <summary>
-        /// Navigates to the specified view and initializes its ViewModel
+        /// Navigates to the specified view and initializes its ViewModel asynchronously
+        /// </summary>
+        /// <typeparam name="TView">View type</typeparam>
+        /// <typeparam name="TViewModel">ViewModel type</typeparam>
+        public async Task NavigateToViewAsync<TView, TViewModel>()
+            where TView : UserControl
+            where TViewModel : ViewModelBase
+        {
+            try
+            {
+                _logger.LogInformation($"Navigating to {typeof(TView).Name}");
+
+                // Get the ViewModel from service provider
+                var viewModel = _serviceProvider.GetRequiredService<TViewModel>();
+
+                // Create the view with the ViewModel
+                var view = (TView)Activator.CreateInstance(typeof(TView), viewModel);
+
+                // Set it as the current content
+                MainContent.Content = view;
+
+                // If the ViewModel has an InitializeAsync method, properly await it
+                if (viewModel.GetType().GetMethod("InitializeAsync") != null)
+                {
+                    try
+                    {
+                        var initMethod = viewModel.GetType().GetMethod("InitializeAsync");
+                        var task = (Task)initMethod.Invoke(viewModel, null);
+
+                        // Actually await the task properly
+                        await task.ConfigureAwait(true); // Stay on UI thread
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Error initializing {typeof(TViewModel).Name}");
+                        StatusText.Text = $"Initialization error: {ex.Message}";
+                    }
+                }
+
+                _logger.LogInformation($"Successfully navigated to {typeof(TView).Name}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error navigating to {typeof(TView).Name}");
+                StatusText.Text = $"Navigation error: {ex.Message}";
+                MessageBox.Show($"Error loading view: {ex.Message}", "Navigation Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Navigates to the specified view and initializes its ViewModel (non-async version for backward compatibility)
         /// </summary>
         /// <typeparam name="TView">View type</typeparam>
         /// <typeparam name="TViewModel">ViewModel type</typeparam>
@@ -100,15 +148,7 @@ namespace OfflinePOS.Cashier
                 // Set it as the current content
                 MainContent.Content = view;
 
-                // If the ViewModel has an InitializeAsync method, call it
-                if (viewModel.GetType().GetMethod("InitializeAsync") != null)
-                {
-                    // Assuming it returns a Task
-                    var initMethod = viewModel.GetType().GetMethod("InitializeAsync");
-                    var task = (Task)initMethod.Invoke(viewModel, null);
-                    task.ConfigureAwait(false); // We don't need to await it here
-                }
-
+                // Async initialization will be handled by the view's Loaded event
                 _logger.LogInformation($"Successfully navigated to {typeof(TView).Name}");
             }
             catch (Exception ex)

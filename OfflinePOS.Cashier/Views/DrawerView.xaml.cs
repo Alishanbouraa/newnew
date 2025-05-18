@@ -1,7 +1,8 @@
-﻿// OfflinePOS.Cashier/Views/DrawerView.xaml.cs
+﻿// File: OfflinePOS.Cashier/Views/DrawerView.xaml.cs
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Cashier.ViewModels;
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -13,7 +14,6 @@ namespace OfflinePOS.Cashier.Views
     public partial class DrawerView : UserControl
     {
         private readonly DrawerViewModel _viewModel;
-        // No direct logger reference needed here
 
         /// <summary>
         /// Initializes a new instance of the DrawerView class
@@ -31,7 +31,6 @@ namespace OfflinePOS.Cashier.Views
         {
             _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
             DataContext = viewModel;
-            // We'll use the ViewModel's logger instead of trying to get our own
         }
 
         /// <summary>
@@ -43,21 +42,26 @@ namespace OfflinePOS.Cashier.Views
         {
             try
             {
-                // Force refresh the drawer state
-                if (_viewModel != null)
+                if (_viewModel == null)
                 {
-                    // Initialize the view model
-                    await _viewModel.InitializeAsync();
-
-                    // Explicitly trigger property change to force UI refresh
-                    _viewModel.RefreshDrawerState();
+                    MessageBox.Show("ViewModel not initialized.", "Initialization Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
                 }
+
+                // Initialize the view model
+                await _viewModel.InitializeAsync();
+
+                // Give the UI a moment to settle before forcing refresh
+                await Task.Delay(100);
+
+                // Force refresh UI state
+                _viewModel.RefreshDrawerState();
             }
             catch (Exception ex)
             {
-                // Log to ViewModel's logger if possible, otherwise use MessageBox directly
                 MessageBox.Show($"Error initializing drawer view: {ex.Message}",
-                               "Initialization Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                       "Initialization Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

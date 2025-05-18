@@ -1,4 +1,4 @@
-﻿// OfflinePOS.Cashier/ViewModels/ViewModelBase.cs
+﻿// File: OfflinePOS.Cashier/ViewModels/ViewModelBase.cs
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Core.MVVM;
 using System;
@@ -16,10 +16,12 @@ namespace OfflinePOS.Cashier.ViewModels
         private bool _isLoading;
         private string _loadingMessage;
         private string _errorMessage;
+
         /// <summary>
         /// Event raised when navigation is requested
         /// </summary>
         public event EventHandler<NavigationEventArgs> NavigationRequested;
+
         /// <summary>
         /// Flag indicating if the ViewModel is loading data
         /// </summary>
@@ -54,6 +56,16 @@ namespace OfflinePOS.Cashier.ViewModels
         protected ViewModelBase(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        /// <summary>
+        /// Cleans up resources and event handlers
+        /// </summary>
+        public virtual void Cleanup()
+        {
+            // Clear any event handlers to prevent memory leaks
+            NavigationRequested = null;
+            _logger.LogDebug($"{GetType().Name} cleanup completed");
         }
 
         /// <summary>
@@ -93,13 +105,28 @@ namespace OfflinePOS.Cashier.ViewModels
                 LoadingMessage = string.Empty;
             }
         }
+
         /// <summary>
         /// Raises the NavigationRequested event
         /// </summary>
         /// <param name="viewName">Name of the view to navigate to</param>
         protected void RequestNavigation(string viewName)
         {
-            NavigationRequested?.Invoke(this, new NavigationEventArgs(viewName));
+            _logger.LogDebug($"View {GetType().Name} requesting navigation to {viewName}");
+            var handler = NavigationRequested;
+
+            if (handler != null)
+            {
+                // Log the number of subscribers for debugging
+                int subscriberCount = handler.GetInvocationList().Length;
+                _logger.LogDebug($"Navigation event has {subscriberCount} subscribers");
+
+                handler.Invoke(this, new NavigationEventArgs(viewName));
+            }
+            else
+            {
+                _logger.LogWarning($"No subscribers for navigation to {viewName}");
+            }
         }
 
         /// <summary>
@@ -121,6 +148,7 @@ namespace OfflinePOS.Cashier.ViewModels
                 ViewName = viewName ?? throw new ArgumentNullException(nameof(viewName));
             }
         }
+
         /// <summary>
         /// Executes a task and handles loading state and errors
         /// </summary>

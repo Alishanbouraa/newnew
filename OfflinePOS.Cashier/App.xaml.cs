@@ -1,4 +1,4 @@
-﻿// OfflinePOS.Cashier/App.xaml.cs
+﻿// File: OfflinePOS.Cashier/App.xaml.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +15,7 @@ using OfflinePOS.DataAccess.Services;
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -182,33 +183,67 @@ namespace OfflinePOS.Cashier
                     _currentUser,
                     _serviceProvider.GetRequiredService<ILogger<MainWindow>>());
 
-                // Set up navigation handlers
+                // Set up navigation handlers with proper cleanup
                 var salesViewModel = _serviceProvider.GetRequiredService<SalesViewModel>();
                 var drawerViewModel = _serviceProvider.GetRequiredService<DrawerViewModel>();
 
-                salesViewModel.NavigationRequested += (sender, args) => {
+                // Clear any existing event handlers to prevent accumulation
+                ClearEventSubscribers(salesViewModel);
+                ClearEventSubscribers(drawerViewModel);
+
+                // Add single event handler to each ViewModel with proper scope
+                salesViewModel.NavigationRequested += HandleSalesViewModelNavigation;
+                drawerViewModel.NavigationRequested += HandleDrawerViewModelNavigation;
+
+                // Store navigation handlers to maintain references
+                void HandleSalesViewModelNavigation(object sender, ViewModelBase.NavigationEventArgs args)
+                {
+                    _logger.LogInformation($"Sales navigation requested to: {args.ViewName}");
+
                     if (args.ViewName == "DrawerView")
-                        mainWindow.NavigateToView<DrawerView, DrawerViewModel>();
-                };
-
-                drawerViewModel.NavigationRequested += (sender, args) => {
-                    _logger.LogInformation($"Navigation requested to: {args.ViewName}");
-
-                    // Handle both "SalesView" and "Sales" to be more flexible
-                    if (args.ViewName == "SalesView" || args.ViewName == "Sales")
                     {
-                        mainWindow.NavigateToView<SalesView, SalesViewModel>();
-                        _logger.LogInformation("Navigation to SalesView executed");
+                        mainWindow.NavigateToView<DrawerView, DrawerViewModel>();
                     }
                     else if (args.ViewName == "Logout")
                     {
-                        // Handle logout navigation if needed
+                        // Handle logout
+                        CleanupViewModels();
+                        ShowLoginWindow();
+                        mainWindow.Close();
                     }
-                };
+                }
+
+                void HandleDrawerViewModelNavigation(object sender, ViewModelBase.NavigationEventArgs args)
+                {
+                    _logger.LogInformation($"Drawer navigation requested to: {args.ViewName}");
+
+                    if (args.ViewName == "SalesView" || args.ViewName == "Sales")
+                    {
+                        mainWindow.NavigateToView<SalesView, SalesViewModel>();
+                    }
+                    else if (args.ViewName == "Logout")
+                    {
+                        // Handle logout
+                        CleanupViewModels();
+                        ShowLoginWindow();
+                        mainWindow.Close();
+                    }
+                }
+
+                void CleanupViewModels()
+                {
+                    salesViewModel.NavigationRequested -= HandleSalesViewModelNavigation;
+                    drawerViewModel.NavigationRequested -= HandleDrawerViewModelNavigation;
+                    salesViewModel.Cleanup();
+                    drawerViewModel.Cleanup();
+                }
 
                 // Set as application's main window
                 Application.Current.MainWindow = mainWindow;
                 Current.Properties["MainWindow"] = mainWindow;
+
+                // Store cleanup method for window closing
+                mainWindow.Closed += (s, e) => CleanupViewModels();
 
                 mainWindow.Show();
 
@@ -220,6 +255,33 @@ namespace OfflinePOS.Cashier
                 MessageBox.Show($"Error opening main application window: {ex.Message}\n\nPlease restart the application.",
                                  "Application Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Current.Shutdown();
+            }
+        }
+
+        /// <summary>
+        /// Clears event subscribers from a ViewModel to prevent event accumulation
+        /// </summary>
+        /// <param name="viewModel">ViewModel to clear events from</param>
+        private void ClearEventSubscribers(ViewModelBase viewModel)
+        {
+            // Use reflection to access and clear the NavigationRequested event
+            try
+            {
+                Type type = viewModel.GetType().BaseType; // Get ViewModelBase
+
+                // Find the event field (which is a backing field for the NavigationRequested event)
+                FieldInfo eventField = type.GetField("NavigationRequested",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+
+                if (eventField != null)
+                {
+                    // Set the event to null, clearing all subscribers
+                    eventField.SetValue(viewModel, null);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not clear event subscribers via reflection");
             }
         }
 

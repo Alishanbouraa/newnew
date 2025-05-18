@@ -13,9 +13,6 @@
 		<EnableDefaultPageItems>false</EnableDefaultPageItems>
 	</PropertyGroup>
 
-	<ItemGroup>
-	  <None Remove="appsettings.json" />
-	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="MaterialDesignThemes.MahApps" Version="0.2.8" />
@@ -38,40 +35,29 @@
 			<Generator>MSBuild:Compile</Generator>
 			<SubType>Designer</SubType>
 		</ApplicationDefinition>
-		<Content Include="appsettings.json">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
 		<Page Include="MainWindow.xaml">
 			<Generator>MSBuild:Compile</Generator>
 			<SubType>Designer</SubType>
 		</Page>
-		<Page Include="Views\DrawerView.xaml">
+		<Page Include="Views\*.xaml">
 			<Generator>MSBuild:Compile</Generator>
 			<SubType>Designer</SubType>
 		</Page>
-		<Page Include="Views\LoginView.xaml">
-			<Generator>MSBuild:Compile</Generator>
-			<SubType>Designer</SubType>
-		</Page>
-		<Page Include="Views\SalesView.xaml">
-			<Generator>MSBuild:Compile</Generator>
-			<SubType>Designer</SubType>
-		</Page>
+		<None Remove="appsettings.json" />
+		<Content Include="appsettings.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+
 		<Compile Update="App.xaml.cs">
 			<DependentUpon>App.xaml</DependentUpon>
 		</Compile>
 		<Compile Update="MainWindow.xaml.cs">
 			<DependentUpon>MainWindow.xaml</DependentUpon>
 		</Compile>
-		<Compile Update="Views\DrawerView.xaml.cs">
-			<DependentUpon>DrawerView.xaml</DependentUpon>
-		</Compile>
-		<Compile Update="Views\LoginView.xaml.cs">
-			<DependentUpon>LoginView.xaml</DependentUpon>
-		</Compile>
-		<Compile Update="Views\SalesView.xaml.cs">
-			<DependentUpon>SalesView.xaml</DependentUpon>
+		<Compile Update="Views\*.xaml.cs">
+			<DependentUpon>%(Filename)</DependentUpon>
 		</Compile>
 	</ItemGroup>
+
 
 </Project>

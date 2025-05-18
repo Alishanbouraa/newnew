@@ -1,4 +1,4 @@
-﻿// OfflinePOS.Cashier/ViewModels/DrawerViewModel.cs
+﻿// File: OfflinePOS.Cashier/ViewModels/DrawerViewModel.cs
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.MVVM;
@@ -23,6 +23,7 @@ namespace OfflinePOS.Cashier.ViewModels
         private decimal _cashOutAmount;
         private string _reason;
         private bool _isDrawerOpen;
+        private bool _isNavigating = false;
 
         /// <summary>
         /// Current drawer operation
@@ -87,6 +88,7 @@ namespace OfflinePOS.Cashier.ViewModels
         /// Command for logging out of the application
         /// </summary>
         public ICommand LogoutCommand { get; }
+
         /// <summary>
         /// Command for closing the drawer
         /// </summary>
@@ -96,6 +98,7 @@ namespace OfflinePOS.Cashier.ViewModels
         /// Command for navigating to the sales view
         /// </summary>
         public ICommand NavigateToSalesCommand { get; }
+
         /// <summary>
         /// Command for adding cash to the drawer
         /// </summary>
@@ -118,10 +121,10 @@ namespace OfflinePOS.Cashier.ViewModels
         /// <param name="logger">Logger</param>
         /// <param name="currentUser">Current user</param>
         public DrawerViewModel(
-     IDrawerService drawerService,
-     ILogger<DrawerViewModel> logger,
-     User currentUser)
-     : base(logger)
+            IDrawerService drawerService,
+            ILogger<DrawerViewModel> logger,
+            User currentUser)
+            : base(logger)
         {
             _drawerService = drawerService ?? throw new ArgumentNullException(nameof(drawerService));
             _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
@@ -135,12 +138,23 @@ namespace OfflinePOS.Cashier.ViewModels
             NavigateToSalesCommand = new RelayCommand(_ => NavigateToSales(), _ => IsDrawerOpen);
             LogoutCommand = new RelayCommand(_ => Logout());
         }
+
+        /// <summary>
+        /// Cleans up resources and event handlers
+        /// </summary>
+        public override void Cleanup()
+        {
+            base.Cleanup();
+            _logger.LogDebug("DrawerViewModel cleanup complete");
+        }
+
         private void Logout()
         {
             // Raise the NavigationRequested event for logout
             RequestNavigation("Logout");
             _logger.LogInformation("User requested logout");
         }
+
         /// <summary>
         /// Initializes the ViewModel
         /// </summary>
@@ -148,7 +162,6 @@ namespace OfflinePOS.Cashier.ViewModels
         {
             await LoadCurrentDrawerAsync();
         }
-
 
         /// <summary>
         /// Loads the current drawer for the user
@@ -203,21 +216,14 @@ namespace OfflinePOS.Cashier.ViewModels
                 {
                     _logger.LogInformation("Drawer opened with ID: {DrawerId}", CurrentDrawer.Id);
 
-                    // After successful drawer opening, navigate to sales
+                    // Directly navigate after successful completion without using Task.Delay
                     if (IsDrawerOpen)
                     {
-                        // Use a slight delay to ensure UI has updated
-                        System.Threading.Tasks.Task.Delay(500).ContinueWith(_ =>
-                        {
-                            System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                            {
-                                NavigateToSales();
-                            });
-                        });
+                        NavigateToSales();
                     }
                 });
         }
-   
+
         /// <summary>
         /// Forces a refresh of the drawer state in the UI
         /// </summary>
@@ -242,10 +248,22 @@ namespace OfflinePOS.Cashier.ViewModels
         /// </summary>
         private void NavigateToSales()
         {
-            // Request navigation using the standard view name
-            RequestNavigation("SalesView");
-            _logger.LogInformation("Requested navigation to sales view");
+            // Guard against multiple navigation attempts
+            if (_isNavigating) return;
+
+            try
+            {
+                _isNavigating = true;
+                // Request navigation using the standard view name
+                RequestNavigation("SalesView");
+                _logger.LogInformation("Requested navigation to sales view");
+            }
+            finally
+            {
+                _isNavigating = false;
+            }
         }
+
         /// <summary>
         /// Closes the current cash drawer
         /// </summary>
