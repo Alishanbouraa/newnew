@@ -1,9 +1,15 @@
-﻿<Application x:Class="OfflinePOS.Admin.App"
+﻿<!-- OfflinePOS.Admin/App.xaml -->
+<Application x:Class="OfflinePOS.Admin.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:OfflinePOS.Admin"
-             StartupUri="MainWindow.xaml">
+             xmlns:converters="clr-namespace:OfflinePOS.Core.Converters;assembly=OfflinePOS.Core">
     <Application.Resources>
-         
+        <ResourceDictionary>
+            <!-- Converters -->
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+            <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>
