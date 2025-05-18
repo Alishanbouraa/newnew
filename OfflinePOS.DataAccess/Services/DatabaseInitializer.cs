@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Core.Models;
 using System;
@@ -44,7 +45,7 @@ namespace OfflinePOS.DataAccess.Services
             {
                 _logger.LogInformation("Starting database initialization...");
 
-                // Check if database exists
+                // Check if database exists and can connect
                 bool dbExists = await _dbContext.Database.CanConnectAsync();
                 _logger.LogInformation($"Database exists: {dbExists}");
 
@@ -54,6 +55,18 @@ namespace OfflinePOS.DataAccess.Services
                     // Create the database
                     await _dbContext.Database.EnsureCreatedAsync();
                     _logger.LogInformation("Database created successfully.");
+                }
+                else
+                {
+                    // Verify database structure even if it exists
+                    bool tablesExist = await CheckTablesExistAsync();
+
+                    if (!tablesExist)
+                    {
+                        _logger.LogWarning("Database exists but tables are missing. Creating schema...");
+                        await _dbContext.Database.EnsureCreatedAsync();
+                        _logger.LogInformation("Schema created successfully.");
+                    }
                 }
 
                 // Verify pending migrations
@@ -86,21 +99,36 @@ namespace OfflinePOS.DataAccess.Services
         }
 
         /// <summary>
+        /// Check if required tables exist in the database
+        /// </summary>
+        private async Task<bool> CheckTablesExistAsync()
+        {
+            try
+            {
+                // Try to get a count from the Users table - if it succeeds, the table exists
+                await _dbContext.Users.CountAsync();
+                return true;
+            }
+            catch (SqlException)
+            {
+                // If we get an exception, the table doesn't exist
+                return false;
+            }
+        }
+        /// <summary>
         /// Verifies the database schema exists correctly
         /// </summary>
         private async Task VerifyDatabaseSchemaAsync()
         {
             _logger.LogInformation("Verifying database schema...");
 
-            // Get all tables in the database
-            var tables = await _dbContext.Database.ExecuteSqlRawAsync(
-                "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'");
+            // Check if Users table exists
+            var userTableExistsQuery = await _dbContext.Database.ExecuteSqlRawAsync(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Users') THEN 1 ELSE 0 END");
 
-            // Verify Users table
-            var userTableExists = await _dbContext.Database.ExecuteSqlRawAsync(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Users'");
+            bool usersTableExists = userTableExistsQuery == 1;
 
-            if (userTableExists == 0)
+            if (!usersTableExists)
             {
                 _logger.LogWarning("Users table does not exist! Attempting to create schema...");
                 await _dbContext.Database.EnsureDeletedAsync();
@@ -135,6 +163,7 @@ namespace OfflinePOS.DataAccess.Services
                     PasswordSalt = Convert.ToBase64String(salt),
                     FullName = "System Administrator",
                     Role = "Admin",
+                    JobTitle = "Administrator", // Add this line to provide JobTitle value
                     CreatedById = 1, // Self-reference as there's no other user yet
                     IsActive = true
                 };
@@ -154,10 +183,13 @@ namespace OfflinePOS.DataAccess.Services
                     CompanyName = "POS System",
                     Address = "Default Address",
                     PhoneNumber1 = "123-456-7890",
+                    PhoneNumber2 = "",  // Empty string instead of NULL
+                    Logo = new byte[0], // Empty byte array instead of NULL
                     MainCurrency = "USD",
                     DefaultLanguage = "en-US",
                     DollarRate = 1.0m,
-                    CreatedById = 1 // Admin user
+                    CreatedById = 1,    // Admin user
+                    IsActive = true     // Don't forget this field
                 };
 
                 _dbContext.CompanySettings.Add(companySettings);

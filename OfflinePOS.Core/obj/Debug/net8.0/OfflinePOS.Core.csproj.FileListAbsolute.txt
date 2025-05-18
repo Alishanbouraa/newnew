@@ -1,5 +1,0 @@
-C:\Users\$\Desktop\OfflinePOS\OfflinePOS.Core\obj\Debug\net8.0\OfflinePOS.Core.csproj.AssemblyReference.cache
-C:\Users\$\Desktop\OfflinePOS\OfflinePOS.Core\obj\Debug\net8.0\OfflinePOS.Core.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\$\Desktop\OfflinePOS\OfflinePOS.Core\obj\Debug\net8.0\OfflinePOS.Core.AssemblyInfoInputs.cache
-C:\Users\$\Desktop\OfflinePOS\OfflinePOS.Core\obj\Debug\net8.0\OfflinePOS.Core.AssemblyInfo.cs
-C:\Users\$\Desktop\OfflinePOS\OfflinePOS.Core\obj\Debug\net8.0\OfflinePOS.Core.csproj.CoreCompileInputs.cache

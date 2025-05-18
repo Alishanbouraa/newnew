@@ -82,14 +82,27 @@ namespace OfflinePOS.DataAccess
                 .Property(u => u.RowVersion)
                 .IsRowVersion();
 
+            // Configure decimal precision for User entity
+            modelBuilder.Entity<User>()
+                .Property(u => u.MonthlySalary)
+                .HasColumnType("decimal(18,2)");
+
+            // Configure CompanySetting entity
             modelBuilder.Entity<CompanySetting>()
                 .ToTable("CompanySettings")
                 .Property(c => c.RowVersion)
                 .IsRowVersion();
 
+            // Configure decimal precision for CompanySetting entity
+            modelBuilder.Entity<CompanySetting>()
+                .Property(c => c.DollarRate)
+                .HasColumnType("decimal(18,4)");
+
+            // You could add more decimal precision configurations here if needed
+            // For example, if there are other decimal properties in the model
+
             base.OnModelCreating(modelBuilder);
         }
-
         /// <summary>
         /// Saves all changes made in this context to the database with audit information
         /// </summary>
