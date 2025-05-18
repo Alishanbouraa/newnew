@@ -11,6 +11,9 @@
     <Compile Update="Views\ProductImportExportView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Views\ProductView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Views\StockManagementView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>

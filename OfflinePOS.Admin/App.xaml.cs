@@ -116,7 +116,17 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<IProductService>(),
                     provider.GetRequiredService<ILogger<ProductImportExportViewModel>>(),
                     _currentUser));
+            services.AddTransient<ICategoryService, CategoryService>();
 
+            services.AddTransient(provider =>
+                new ProductViewModel(
+                    provider.GetRequiredService<IProductService>(),
+                    provider.GetRequiredService<IStockService>(),
+                    provider.GetRequiredService<ICategoryService>(),
+                    provider.GetRequiredService<ILogger<ProductViewModel>>(),
+                    _currentUser));
+
+            services.AddTransient<ProductView>();
             // Register Views
             services.AddTransient<StockManagementView>();
             services.AddTransient<BarcodeManagementView>();

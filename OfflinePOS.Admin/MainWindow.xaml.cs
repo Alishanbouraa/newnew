@@ -1,11 +1,10 @@
-﻿// OfflinePOS.Admin/MainWindow.xaml.cs
+﻿// File: OfflinePOS.Admin/MainWindow.xaml.cs
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Admin.Views;
 using OfflinePOS.Core.Models;
 using System;
 using System.ComponentModel;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -42,12 +41,6 @@ namespace OfflinePOS.Admin
 
                 _logger?.LogDebug("InitializeComponent completed");
 
-                // Add event handlers for window lifecycle
-                this.Loaded += MainWindow_Loaded;
-                this.ContentRendered += MainWindow_ContentRendered;
-                this.Closed += MainWindow_Closed;
-                this.Closing += MainWindow_Closing;
-
                 // Mark as initialized so closing event doesn't prematurely terminate
                 _isInitialized = true;
 
@@ -70,9 +63,6 @@ namespace OfflinePOS.Admin
             try
             {
                 _logger?.LogInformation($"MainWindow.Loaded event for user: {_currentUser.Username}");
-
-                // Run diagnostics to verify XAML elements
-                Diagnostics.MainWindowDiagnostics.VerifyXamlElements(this, _logger);
 
                 // Set user info safely
                 if (UserNameTextBlock != null)
@@ -111,14 +101,6 @@ namespace OfflinePOS.Admin
         }
 
         /// <summary>
-        /// Handles the Window.Closed event
-        /// </summary>
-        private void MainWindow_Closed(object sender, EventArgs e)
-        {
-            _logger?.LogInformation($"MainWindow.Closed event for user: {_currentUser?.Username}");
-        }
-
-        /// <summary>
         /// Handles the Window.Closing event
         /// </summary>
         private void MainWindow_Closing(object sender, CancelEventArgs e)
@@ -150,13 +132,86 @@ namespace OfflinePOS.Admin
                 if (NavigationListBox?.SelectedItem is ListBoxItem selectedItem && PageTitleTextBlock != null)
                 {
                     // Update page title
-                    PageTitleTextBlock.Text = selectedItem.Content.ToString();
-                    _logger?.LogDebug($"Navigation changed to: {selectedItem.Content}");
+                    string viewName = selectedItem.Content.ToString();
+                    PageTitleTextBlock.Text = viewName;
+                    _logger?.LogDebug($"Navigation changed to: {viewName}");
+
+                    // Navigate to the appropriate view based on selection
+                    switch (viewName)
+                    {
+                        case "Dashboard":
+                            MainContent.Content = "Welcome to POS Admin System";
+                            break;
+                        case "Products":
+                            LoadView<ProductView>();
+                            break;
+                        case "Categories":
+                            // Load CategoryView
+                            MainContent.Content = "Categories view not implemented yet";
+                            break;
+                        case "Suppliers":
+                            // Load SupplierView
+                            MainContent.Content = "Suppliers view not implemented yet";
+                            break;
+                        case "Customers":
+                            // Load CustomerView
+                            MainContent.Content = "Customers view not implemented yet";
+                            break;
+                        case "Transactions":
+                            // Load TransactionView
+                            MainContent.Content = "Transactions view not implemented yet";
+                            break;
+                        case "Employees":
+                            // Load EmployeeView
+                            MainContent.Content = "Employees view not implemented yet";
+                            break;
+                        case "Reports":
+                            // Load ReportView
+                            MainContent.Content = "Reports view not implemented yet";
+                            break;
+                        case "Settings":
+                            // Load SettingsView
+                            MainContent.Content = "Settings view not implemented yet";
+                            break;
+                        default:
+                            MainContent.Content = $"View for {viewName} not implemented yet.";
+                            break;
+                    }
                 }
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error during navigation change");
+                MessageBox.Show($"Error navigating to selected item: {ex.Message}",
+                              "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Loads a view from the DI container and sets it as the main content
+        /// </summary>
+        /// <typeparam name="T">Type of view to load</typeparam>
+        private void LoadView<T>() where T : UserControl
+        {
+            try
+            {
+                // Request the view from the DI container
+                var view = _serviceProvider.GetService<T>();
+                if (view != null)
+                {
+                    MainContent.Content = view;
+                    _logger?.LogInformation($"Loaded view: {typeof(T).Name}");
+                }
+                else
+                {
+                    _logger?.LogWarning($"View {typeof(T).Name} could not be resolved from DI container");
+                    MainContent.Content = $"Error: Could not load {typeof(T).Name}";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, $"Error loading view {typeof(T).Name}");
+                MainContent.Content = $"Error loading view: {ex.Message}";
             }
         }
 

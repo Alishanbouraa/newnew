@@ -1,4 +1,4 @@
-﻿<!-- OfflinePOS.Admin/MainWindow.xaml -->
+﻿<!-- File: OfflinePOS.Admin/MainWindow.xaml -->
 <Window x:Class="OfflinePOS.Admin.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
