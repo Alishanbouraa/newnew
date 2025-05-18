@@ -1,12 +1,37 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\$\\Desktop\\OfflinePOS\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{E262B874-A19C-4658-9807-CE2F2499B4DD}|OfflinePOS.Cashier\\OfflinePOS.Cashier.csproj|c:\\users\\$\\desktop\\offlinepos\\offlinepos.cashier\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E262B874-A19C-4658-9807-CE2F2499B4DD}|OfflinePOS.Cashier\\OfflinePOS.Cashier.csproj|solutionrelative:offlinepos.cashier\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "App.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Cashier\\App.xaml.cs",
+              "RelativeDocumentMoniker": "OfflinePOS.Cashier\\App.xaml.cs",
+              "ToolTip": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Cashier\\App.xaml.cs",
+              "RelativeToolTip": "OfflinePOS.Cashier\\App.xaml.cs",
+              "ViewState": "AgIAAKsAAAAAAAAAAAD4v7MAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-18T15:36:46.477Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }

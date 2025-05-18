@@ -191,21 +191,61 @@ namespace OfflinePOS.Cashier.ViewModels
                     DrawerBalance = CashInAmount;
                     IsDrawerOpen = true;
                     CashInAmount = 0;
+
+                    // Force UI refresh
+                    RefreshDrawerState();
+
                     return CurrentDrawer;
                 },
                 "Opening drawer...",
                 "Failed to open drawer",
-                _ => _logger.LogInformation("Drawer opened with ID: {DrawerId}", CurrentDrawer.Id));
+                _ =>
+                {
+                    _logger.LogInformation("Drawer opened with ID: {DrawerId}", CurrentDrawer.Id);
+
+                    // After successful drawer opening, navigate to sales
+                    if (IsDrawerOpen)
+                    {
+                        // Use a slight delay to ensure UI has updated
+                        System.Threading.Tasks.Task.Delay(500).ContinueWith(_ =>
+                        {
+                            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                NavigateToSales();
+                            });
+                        });
+                    }
+                });
         }
+   
+        /// <summary>
+        /// Forces a refresh of the drawer state in the UI
+        /// </summary>
+        public void RefreshDrawerState()
+        {
+            _logger.LogInformation($"Refreshing drawer state. IsDrawerOpen: {IsDrawerOpen}, DrawerBalance: {DrawerBalance}");
+
+            // Re-trigger property changed notifications for key properties
+            OnPropertyChanged(nameof(IsDrawerOpen));
+            OnPropertyChanged(nameof(DrawerBalance));
+            OnPropertyChanged(nameof(CurrentDrawer));
+
+            // Clear any error messages
+            ErrorMessage = string.Empty;
+
+            // Update the navigation command
+            (NavigateToSalesCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        }
+
         /// <summary>
         /// Navigates to the sales view
         /// </summary>
         private void NavigateToSales()
         {
-            // This will be handled by the application shell
+            // Request navigation using the standard view name
+            RequestNavigation("SalesView");
             _logger.LogInformation("Requested navigation to sales view");
         }
-
         /// <summary>
         /// Closes the current cash drawer
         /// </summary>

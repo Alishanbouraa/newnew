@@ -192,8 +192,18 @@ namespace OfflinePOS.Cashier
                 };
 
                 drawerViewModel.NavigationRequested += (sender, args) => {
-                    if (args.ViewName == "SalesView")
+                    _logger.LogInformation($"Navigation requested to: {args.ViewName}");
+
+                    // Handle both "SalesView" and "Sales" to be more flexible
+                    if (args.ViewName == "SalesView" || args.ViewName == "Sales")
+                    {
                         mainWindow.NavigateToView<SalesView, SalesViewModel>();
+                        _logger.LogInformation("Navigation to SalesView executed");
+                    }
+                    else if (args.ViewName == "Logout")
+                    {
+                        // Handle logout navigation if needed
+                    }
                 };
 
                 // Set as application's main window

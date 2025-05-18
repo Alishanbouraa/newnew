@@ -5,8 +5,10 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:OfflinePOS.Cashier.Views"
              xmlns:converters="clr-namespace:OfflinePOS.Core.Converters;assembly=OfflinePOS.Core"
+             xmlns:behaviors="clr-namespace:OfflinePOS.Core.Behaviors;assembly=OfflinePOS.Core"
              mc:Ignorable="d" 
-             d:DesignHeight="768" d:DesignWidth="1024">
+             d:DesignHeight="768" d:DesignWidth="1024"
+             Loaded="DrawerView_Loaded">
 
     <UserControl.Resources>
         <ResourceDictionary>
@@ -75,7 +77,8 @@
                                  Text="{Binding CashInAmount, UpdateSourceTrigger=PropertyChanged}" 
                                  FontSize="18" 
                                  Padding="10,5" 
-                                 Margin="0,0,10,0"/>
+                                 Margin="0,0,10,0"
+                                 behaviors:DecimalInputBehavior.IsEnabled="True"/>
 
                         <TextBlock Grid.Column="1" 
                                    Text="$" 
@@ -158,7 +161,8 @@
 
                             <TextBox Text="{Binding CashInAmount, UpdateSourceTrigger=PropertyChanged}" 
                                      Padding="5" 
-                                     Margin="0,0,0,10"/>
+                                     Margin="0,0,0,10"
+                                     behaviors:DecimalInputBehavior.IsEnabled="True"/>
 
                             <TextBlock Text="Reason:" 
                                        Margin="0,5"/>
@@ -191,10 +195,10 @@
                             <TextBlock Text="Amount:" 
                                        Margin="0,5"/>
 
-                            <TextBox Text="{Binding CashOutAmount, UpdateSourceTrigger=PropertyChanged, 
-                Converter={StaticResource StringToDecimalConverter}}" 
-         Padding="5" 
-         Margin="0,0,0,10"/>
+                            <TextBox Text="{Binding CashOutAmount, UpdateSourceTrigger=PropertyChanged}" 
+                                     Padding="5" 
+                                     Margin="0,0,0,10"
+                                     behaviors:DecimalInputBehavior.IsEnabled="True"/>
 
                             <TextBlock Text="Reason:" 
                                        Margin="0,5"/>
@@ -229,7 +233,8 @@
 
                             <TextBox Text="{Binding CashOutAmount, UpdateSourceTrigger=PropertyChanged}" 
                                      Padding="5" 
-                                     Margin="0,0,0,10"/>
+                                     Margin="0,0,0,10"
+                                     behaviors:DecimalInputBehavior.IsEnabled="True"/>
 
                             <TextBlock Text="Closing Notes:" 
                                        Margin="0,5"/>
@@ -278,5 +283,14 @@
                            TextAlignment="Center"/>
             </StackPanel>
         </Grid>
+
+        <!-- Status message at the bottom for debugging -->
+        <TextBlock Grid.Row="1" 
+                   VerticalAlignment="Bottom" 
+                   HorizontalAlignment="Left" 
+                   Margin="10"
+                   Text="{Binding IsDrawerOpen, StringFormat=Drawer Status: {0}}" 
+                   Foreground="#666"
+                   FontSize="10"/>
     </Grid>
 </UserControl>
