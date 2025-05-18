@@ -4,12 +4,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Admin.Views;
+using OfflinePOS.Core.Diagnostics;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.Services;
 using OfflinePOS.Core.ViewModels;
 using OfflinePOS.DataAccess;
 using OfflinePOS.DataAccess.Services;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 
@@ -35,6 +37,9 @@ namespace OfflinePOS.Admin
 
             _serviceProvider = serviceCollection.BuildServiceProvider();
             _logger = _serviceProvider.GetRequiredService<ILogger<App>>();
+
+            // Configure XAML diagnostics
+            ConfigureXamlDiagnostics();
 
             try
             {
@@ -102,6 +107,15 @@ namespace OfflinePOS.Admin
                     }));
         }
 
+        private void ConfigureXamlDiagnostics()
+        {
+            // Enable XAML diagnostic tracing
+            PresentationTraceSources.Refresh();
+            PresentationTraceSources.DataBindingSource.Listeners.Add(
+                new XamlTraceListener());
+            PresentationTraceSources.DataBindingSource.Switch.Level = SourceLevels.Warning;
+        }
+
         private void ShowLoginWindow()
         {
             var loginWindow = _serviceProvider.GetRequiredService<LoginView>();
@@ -110,22 +124,35 @@ namespace OfflinePOS.Admin
 
         private void ShowMainWindow()
         {
-            // Close all windows (login window)
-            foreach (Window window in Current.Windows)
+            try
             {
-                if (window is LoginView)
+                // Close all windows (login window)
+                foreach (Window window in Current.Windows)
                 {
-                    window.Close();
+                    if (window is LoginView)
+                    {
+                        window.Close();
+                    }
                 }
+
+                // Set current user in the DbContext
+                var dbContext = _serviceProvider.GetRequiredService<ApplicationDbContext>();
+                dbContext.CurrentUserId = _currentUser.Id;
+
+                // Create and show main window with the current user and service provider
+                _logger.LogInformation($"Creating main window for user: {_currentUser.Username}");
+                var mainWindow = new MainWindow(_currentUser, _serviceProvider);
+                mainWindow.Show();
+
+                _logger.LogInformation($"Main window opened for user: {_currentUser.Username}");
             }
-
-            // Set current user in the DbContext
-            var dbContext = _serviceProvider.GetRequiredService<ApplicationDbContext>();
-            dbContext.CurrentUserId = _currentUser.Id;
-
-            // Create and show main window with the current user and service provider
-            var mainWindow = new MainWindow(_currentUser, _serviceProvider);
-            mainWindow.Show();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error showing main window after login");
+                MessageBox.Show($"Error opening main application window: {ex.Message}\n\nPlease restart the application.",
+                                "Application Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Current.Shutdown();
+            }
         }
     }
 }

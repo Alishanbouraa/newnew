@@ -5,9 +5,23 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OfflinePOS.Admin"
+        xmlns:converters="clr-namespace:OfflinePOS.Core.Converters;assembly=OfflinePOS.Core"
         mc:Ignorable="d"
         Title="POS Admin System" Height="768" Width="1024" 
         WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/OfflinePOS.Core;component/Styles/CommonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Import converters -->
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+            <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        </ResourceDictionary>
+    </Window.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
