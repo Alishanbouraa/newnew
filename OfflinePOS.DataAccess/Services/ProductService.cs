@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.Repositories;
 using OfflinePOS.Core.Services;
+using OfflinePOS.DataAccess.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -88,12 +89,16 @@ namespace OfflinePOS.DataAccess.Services
         }
 
         /// <inheritdoc/>
+        // OfflinePOS.DataAccess/Services/ProductService.cs - around line 96
         public async Task<IEnumerable<Product>> GetLowStockProductsAsync()
         {
             try
             {
-                // This requires joining with Stock table, so we'll use the StockService
-                var stockService = new StockService(_unitOfWork, _logger);
+                // Create a logger adapter that wraps the current logger
+                var stockServiceLogger = new LoggerAdapter<StockService>(_logger);
+
+                // Pass the adapted logger to StockService
+                var stockService = new StockService(_unitOfWork, stockServiceLogger);
                 var lowStockItems = await stockService.GetLowStockProductsAsync();
                 return lowStockItems.Select(item => item.Product);
             }

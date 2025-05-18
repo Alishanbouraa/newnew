@@ -1,5 +1,4 @@
-﻿// OfflinePOS.Admin/ViewModels/InventoryViewModelBase.cs
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.MVVM;
 using OfflinePOS.Core.Services;
@@ -8,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
+
 
 namespace OfflinePOS.Admin.ViewModels
 {
@@ -33,6 +33,47 @@ namespace OfflinePOS.Admin.ViewModels
         {
             get => _products;
             set => SetProperty(ref _products, value);
+        }
+
+        /// <summary>
+        /// Public facade to load products - accessible to View classes
+        /// </summary>
+        /// <returns>Task representing the asynchronous operation</returns>
+        public async Task LoadProductsPublicAsync()
+        {
+            await LoadProductsAsync();
+        }
+
+        /// <summary>
+        /// Protected implementation for loading products - accessible within the ViewModel hierarchy
+        /// </summary>
+        /// <returns>Task representing the asynchronous operation</returns>
+        protected virtual async Task LoadProductsAsync()
+        {
+            try
+            {
+                IsBusy = true;
+                StatusMessage = "Loading products...";
+
+                var products = await _productService.GetAllProductsAsync();
+
+                Products.Clear();
+                foreach (var product in products)
+                {
+                    Products.Add(product);
+                }
+
+                StatusMessage = $"Loaded {Products.Count} products";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error loading products: {ex.Message}";
+                _logger.LogError(ex, "Error loading products");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         /// <summary>
@@ -145,35 +186,6 @@ namespace OfflinePOS.Admin.ViewModels
             }
         }
 
-        /// <summary>
-        /// Loads products from the database
-        /// </summary>
-        protected virtual async Task LoadProductsAsync()
-        {
-            try
-            {
-                IsBusy = true;
-                StatusMessage = "Loading products...";
-
-                var products = await _productService.GetAllProductsAsync();
-
-                Products.Clear();
-                foreach (var product in products)
-                {
-                    Products.Add(product);
-                }
-
-                StatusMessage = $"Loaded {Products.Count} products";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Error loading products: {ex.Message}";
-                _logger.LogError(ex, "Error loading products");
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
+       
     }
 }

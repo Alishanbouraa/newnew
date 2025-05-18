@@ -6,10 +6,9 @@
              xmlns:converters="clr-namespace:OfflinePOS.Core.Converters;assembly=OfflinePOS.Core">
     <Application.Resources>
         <ResourceDictionary>
-            <!-- Converters -->
-            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
-            <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/OfflinePOS.Core;component/Converters/ConverterResources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

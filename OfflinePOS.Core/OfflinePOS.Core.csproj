@@ -4,8 +4,7 @@
 		<TargetFramework>net8.0-windows</TargetFramework>
 		<Nullable>enable</Nullable>
 		<UseWPF>true</UseWPF>
-
-		<!-- Disable default XAML inclusion to prevent duplication -->
+		<!-- Keep this line to prevent duplicate inclusions -->
 		<EnableDefaultPageItems>false</EnableDefaultPageItems>
 	</PropertyGroup>
 

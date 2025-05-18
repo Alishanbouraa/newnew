@@ -12,7 +12,7 @@ namespace OfflinePOS.Core.MVVM
     /// </summary>
     public abstract class ViewModelCommandBase : ObservableObject
     {
-        private readonly ILogger _logger;
+        protected readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the ViewModelCommandBase class
