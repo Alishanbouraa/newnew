@@ -17,6 +17,9 @@ using System.Windows;
 
 namespace OfflinePOS.Admin
 {
+    /// <summary>
+    /// Main application class that handles initialization, dependency injection, and application lifecycle
+    /// </summary>
     public partial class App : Application
     {
         private IServiceProvider _serviceProvider;
@@ -24,8 +27,14 @@ namespace OfflinePOS.Admin
         private ILogger<App> _logger;
         private User _currentUser;
 
+        /// <summary>
+        /// Application startup entry point
+        /// </summary>
         protected override async void OnStartup(StartupEventArgs e)
         {
+            // Configure application shutdown mode to prevent automatic termination
+            Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
@@ -43,6 +52,9 @@ namespace OfflinePOS.Admin
 
             try
             {
+                // Ensure resources are loaded first
+                EnsureResourcesLoaded();
+
                 // Initialize database before showing the login window
                 _logger.LogInformation("Initializing application...");
                 var dbInitializer = _serviceProvider.GetRequiredService<DatabaseInitializer>();
@@ -61,6 +73,9 @@ namespace OfflinePOS.Admin
             }
         }
 
+        /// <summary>
+        /// Configures application services for dependency injection
+        /// </summary>
         private void ConfigureServices(IServiceCollection services)
         {
             // Register logging
@@ -107,6 +122,9 @@ namespace OfflinePOS.Admin
                     }));
         }
 
+        /// <summary>
+        /// Configures XAML diagnostic tracing
+        /// </summary>
         private void ConfigureXamlDiagnostics()
         {
             // Enable XAML diagnostic tracing
@@ -116,12 +134,40 @@ namespace OfflinePOS.Admin
             PresentationTraceSources.DataBindingSource.Switch.Level = SourceLevels.Warning;
         }
 
+        /// <summary>
+        /// Ensures all required resources are loaded
+        /// </summary>
+        private void EnsureResourcesLoaded()
+        {
+            try
+            {
+                // Try to load the common resources
+                var resourceUri = new Uri("pack://application:,,,/OfflinePOS.Core;component/Styles/CommonStyles.xaml", UriKind.Absolute);
+                var resourceDict = new ResourceDictionary { Source = resourceUri };
+
+                // Add to the application resources if loaded successfully
+                Application.Current.Resources.MergedDictionaries.Add(resourceDict);
+                _logger?.LogInformation("Common resources loaded successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Failed to load common resources. UI might be affected.");
+                // Continue application execution despite resource loading issues
+            }
+        }
+
+        /// <summary>
+        /// Shows the login window
+        /// </summary>
         private void ShowLoginWindow()
         {
             var loginWindow = _serviceProvider.GetRequiredService<LoginView>();
             loginWindow.Show();
         }
 
+        /// <summary>
+        /// Shows the main application window after successful login
+        /// </summary>
         private void ShowMainWindow()
         {
             try
@@ -141,7 +187,17 @@ namespace OfflinePOS.Admin
 
                 // Create and show main window with the current user and service provider
                 _logger.LogInformation($"Creating main window for user: {_currentUser.Username}");
+
+                // Create the main window
                 var mainWindow = new MainWindow(_currentUser, _serviceProvider);
+
+                // CRITICAL: Set as application's main window
+                Application.Current.MainWindow = mainWindow;
+
+                // Add a strong reference to prevent GC and inadvertent collection
+                Current.Properties["MainWindow"] = mainWindow;
+
+                // Show the window
                 mainWindow.Show();
 
                 _logger.LogInformation($"Main window opened for user: {_currentUser.Username}");

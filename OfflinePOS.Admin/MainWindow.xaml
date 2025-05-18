@@ -8,7 +8,10 @@
         xmlns:converters="clr-namespace:OfflinePOS.Core.Converters;assembly=OfflinePOS.Core"
         mc:Ignorable="d"
         Title="POS Admin System" Height="768" Width="1024" 
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Loaded="MainWindow_Loaded"
+        ContentRendered="MainWindow_ContentRendered"
+        Closing="MainWindow_Closing">
 
     <Window.Resources>
         <ResourceDictionary>

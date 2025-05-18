@@ -4,17 +4,28 @@ using Microsoft.Extensions.Logging;
 using OfflinePOS.Admin.Views;
 using OfflinePOS.Core.Models;
 using System;
+using System.ComponentModel;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
 namespace OfflinePOS.Admin
 {
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml - Main administrative interface
+    /// </summary>
     public partial class MainWindow : Window
     {
         private readonly User _currentUser;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<MainWindow> _logger;
+        private bool _isInitialized = false;
 
+        /// <summary>
+        /// Initializes a new instance of the MainWindow class
+        /// </summary>
+        /// <param name="currentUser">The authenticated user</param>
+        /// <param name="serviceProvider">Service provider for dependency resolution</param>
         public MainWindow(User currentUser, IServiceProvider serviceProvider)
         {
             try
@@ -23,39 +34,123 @@ namespace OfflinePOS.Admin
                 _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
                 _logger = _serviceProvider.GetService<ILogger<MainWindow>>();
 
+                // Log before initialization
+                _logger?.LogDebug("MainWindow constructor starting");
+
+                // Initialize component first
                 InitializeComponent();
 
-                // Set user info
-                UserNameTextBlock.Text = _currentUser.FullName;
+                _logger?.LogDebug("InitializeComponent completed");
 
-                // Select first item in navigation
-                if (NavigationListBox.Items.Count > 0)
-                {
-                    NavigationListBox.SelectedIndex = 0;
-                }
+                // Add event handlers for window lifecycle
+                this.Loaded += MainWindow_Loaded;
+                this.ContentRendered += MainWindow_ContentRendered;
+                this.Closed += MainWindow_Closed;
+                this.Closing += MainWindow_Closing;
 
-                _logger?.LogDebug($"MainWindow initialized successfully for user: {_currentUser.Username}");
+                // Mark as initialized so closing event doesn't prematurely terminate
+                _isInitialized = true;
+
+                _logger?.LogInformation($"MainWindow constructor completed for user: {_currentUser.Username}");
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error initializing MainWindow");
                 MessageBox.Show($"Error initializing main window: {ex.Message}",
                                "Initialization Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                throw; // Rethrow to be caught by the exception handler in App.xaml.cs
+                throw;
             }
         }
 
+        /// <summary>
+        /// Handles the Window.Loaded event
+        /// </summary>
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _logger?.LogInformation($"MainWindow.Loaded event for user: {_currentUser.Username}");
+
+                // Run diagnostics to verify XAML elements
+                Diagnostics.MainWindowDiagnostics.VerifyXamlElements(this, _logger);
+
+                // Set user info safely
+                if (UserNameTextBlock != null)
+                {
+                    UserNameTextBlock.Text = _currentUser.FullName;
+                    _logger?.LogDebug("UserNameTextBlock.Text set successfully");
+                }
+                else
+                {
+                    _logger?.LogWarning("UserNameTextBlock is null!");
+                }
+
+                // Select first item in navigation safely
+                if (NavigationListBox != null && NavigationListBox.Items.Count > 0)
+                {
+                    NavigationListBox.SelectedIndex = 0;
+                    _logger?.LogDebug("NavigationListBox selection set successfully");
+                }
+                else
+                {
+                    _logger?.LogWarning($"NavigationListBox is null or empty: {NavigationListBox?.Items?.Count ?? -1} items");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error in MainWindow_Loaded event");
+            }
+        }
+
+        /// <summary>
+        /// Handles the Window.ContentRendered event
+        /// </summary>
+        private void MainWindow_ContentRendered(object sender, EventArgs e)
+        {
+            _logger?.LogInformation("MainWindow.ContentRendered event fired");
+        }
+
+        /// <summary>
+        /// Handles the Window.Closed event
+        /// </summary>
+        private void MainWindow_Closed(object sender, EventArgs e)
+        {
+            _logger?.LogInformation($"MainWindow.Closed event for user: {_currentUser?.Username}");
+        }
+
+        /// <summary>
+        /// Handles the Window.Closing event
+        /// </summary>
+        private void MainWindow_Closing(object sender, CancelEventArgs e)
+        {
+            // Only log if properly initialized
+            if (_isInitialized)
+            {
+                _logger?.LogInformation($"MainWindow closing for user: {_currentUser.Username}");
+
+                if (Application.Current.MainWindow == this)
+                {
+                    _logger?.LogInformation("Application shutting down from MainWindow closing");
+                }
+            }
+            else
+            {
+                // If we're closing during initialization, there may be an error
+                _logger?.LogWarning("MainWindow closing during initialization - possible error");
+            }
+        }
+
+        /// <summary>
+        /// Handles the navigation list box selection change
+        /// </summary>
         private void NavigationListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             try
             {
-                if (NavigationListBox.SelectedItem is ListBoxItem selectedItem)
+                if (NavigationListBox?.SelectedItem is ListBoxItem selectedItem && PageTitleTextBlock != null)
                 {
                     // Update page title
                     PageTitleTextBlock.Text = selectedItem.Content.ToString();
-
-                    // Here you would navigate to different views based on selection
-                    // This will be implemented in future steps
                     _logger?.LogDebug($"Navigation changed to: {selectedItem.Content}");
                 }
             }
@@ -65,6 +160,9 @@ namespace OfflinePOS.Admin
             }
         }
 
+        /// <summary>
+        /// Handles the logout button click
+        /// </summary>
         private void LogoutButton_Click(object sender, RoutedEventArgs e)
         {
             try
