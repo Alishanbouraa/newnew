@@ -48,7 +48,7 @@ namespace OfflinePOS.Cashier
 
             _serviceProvider = serviceCollection.BuildServiceProvider();
             _logger = _serviceProvider.GetRequiredService<ILogger<App>>();
-
+            EnsureResourcesLoaded();
             try
             {
                 // Initialize database before showing the login window
@@ -139,6 +139,8 @@ namespace OfflinePOS.Cashier
             services.AddTransient<LoginView>();
             services.AddTransient<SalesView>();
             services.AddTransient<DrawerView>();
+
+            // Note: We do NOT register MainWindow as a service since we need to manually create it with the current user
         }
 
         /// <summary>
@@ -153,6 +155,7 @@ namespace OfflinePOS.Cashier
         /// <summary>
         /// Shows the main application window after successful login
         /// </summary>
+        /// 
         private void ShowMainWindow()
         {
             try
@@ -170,9 +173,14 @@ namespace OfflinePOS.Cashier
                 var dbContext = _serviceProvider.GetRequiredService<ApplicationDbContext>();
                 dbContext.CurrentUserId = _currentUser.Id;
 
-                // Create and show main window
+                // Create and show main window - MANUALLY CREATE it with the required dependencies
                 _logger.LogInformation($"Creating main window for user: {_currentUser.Username}");
-                var mainWindow = new MainWindow(_serviceProvider, _currentUser, _serviceProvider.GetRequiredService<ILogger<MainWindow>>());
+
+                // Create main window with dependencies - don't use DI container to instantiate it
+                var mainWindow = new MainWindow(
+                    _serviceProvider,
+                    _currentUser,
+                    _serviceProvider.GetRequiredService<ILogger<MainWindow>>());
 
                 // Set up navigation handlers
                 var salesViewModel = _serviceProvider.GetRequiredService<SalesViewModel>();
@@ -204,6 +212,31 @@ namespace OfflinePOS.Cashier
                 Current.Shutdown();
             }
         }
+        private void EnsureResourcesLoaded()
+        {
+            try
+            {
+                // Verify core resources are loaded
+                var coreResourcePaths = new[]
+                {
+            "pack://application:,,,/OfflinePOS.Core;component/Styles/CommonStyles.xaml",
+            "pack://application:,,,/OfflinePOS.Core;component/Converters/ConverterResources.xaml"
+        };
 
+                foreach (var resourcePath in coreResourcePaths)
+                {
+                    if (!Application.Current.Resources.MergedDictionaries.Any(d => d.Source?.ToString() == resourcePath))
+                    {
+                        var resourceDict = new ResourceDictionary { Source = new Uri(resourcePath, UriKind.Absolute) };
+                        Application.Current.Resources.MergedDictionaries.Add(resourceDict);
+                        _logger?.LogInformation($"Loaded resource dictionary: {resourcePath}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Error ensuring resources are loaded. Some UI elements may not appear correctly.");
+            }
+        }
     }
 }

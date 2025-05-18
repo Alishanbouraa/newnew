@@ -1,88 +1,12 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\$\\Desktop\\OfflinePOS\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{E262B874-A19C-4658-9807-CE2F2499B4DD}|OfflinePOS.Cashier\\OfflinePOS.Cashier.csproj|c:\\users\\$\\desktop\\offlinepos\\offlinepos.cashier\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E262B874-A19C-4658-9807-CE2F2499B4DD}|OfflinePOS.Cashier\\OfflinePOS.Cashier.csproj|solutionrelative:offlinepos.cashier\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{E262B874-A19C-4658-9807-CE2F2499B4DD}|OfflinePOS.Cashier\\OfflinePOS.Cashier.csproj|c:\\users\\$\\desktop\\offlinepos\\offlinepos.cashier\\viewmodels\\viewmodelbase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E262B874-A19C-4658-9807-CE2F2499B4DD}|OfflinePOS.Cashier\\OfflinePOS.Cashier.csproj|solutionrelative:offlinepos.cashier\\viewmodels\\viewmodelbase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{E262B874-A19C-4658-9807-CE2F2499B4DD}|OfflinePOS.Cashier\\OfflinePOS.Cashier.csproj|c:\\users\\$\\desktop\\offlinepos\\offlinepos.cashier\\viewmodels\\salesviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E262B874-A19C-4658-9807-CE2F2499B4DD}|OfflinePOS.Cashier\\OfflinePOS.Cashier.csproj|solutionrelative:offlinepos.cashier\\viewmodels\\salesviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{E262B874-A19C-4658-9807-CE2F2499B4DD}|OfflinePOS.Cashier\\OfflinePOS.Cashier.csproj|c:\\users\\$\\desktop\\offlinepos\\offlinepos.cashier\\viewmodels\\drawerviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E262B874-A19C-4658-9807-CE2F2499B4DD}|OfflinePOS.Cashier\\OfflinePOS.Cashier.csproj|solutionrelative:offlinepos.cashier\\viewmodels\\drawerviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    }
-  ],
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": [
-        {
-          "DockedWidth": 200,
-          "SelectedChildIndex": 0,
-          "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "App.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Cashier\\App.xaml.cs",
-              "RelativeDocumentMoniker": "OfflinePOS.Cashier\\App.xaml.cs",
-              "ToolTip": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Cashier\\App.xaml.cs",
-              "RelativeToolTip": "OfflinePOS.Cashier\\App.xaml.cs",
-              "ViewState": "AgIAAKkAAAAAAAAAAAAqwLIAAABJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-18T14:30:25.205Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ViewModelBase.cs",
-              "DocumentMoniker": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Cashier\\ViewModels\\ViewModelBase.cs",
-              "RelativeDocumentMoniker": "OfflinePOS.Cashier\\ViewModels\\ViewModelBase.cs",
-              "ToolTip": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Cashier\\ViewModels\\ViewModelBase.cs",
-              "RelativeToolTip": "OfflinePOS.Cashier\\ViewModels\\ViewModelBase.cs",
-              "ViewState": "AgIAAGcAAAAAAAAAAAAqwHAAAAArAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-18T14:29:15.284Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "SalesViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Cashier\\ViewModels\\SalesViewModel.cs",
-              "RelativeDocumentMoniker": "OfflinePOS.Cashier\\ViewModels\\SalesViewModel.cs",
-              "ToolTip": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Cashier\\ViewModels\\SalesViewModel.cs",
-              "RelativeToolTip": "OfflinePOS.Cashier\\ViewModels\\SalesViewModel.cs",
-              "ViewState": "AgIAAKkBAAAAAAAAAAAUwLoBAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-18T14:27:15.177Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "DrawerViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Cashier\\ViewModels\\DrawerViewModel.cs",
-              "RelativeDocumentMoniker": "OfflinePOS.Cashier\\ViewModels\\DrawerViewModel.cs",
-              "ToolTip": "C:\\Users\\$\\Desktop\\OfflinePOS\\OfflinePOS.Cashier\\ViewModels\\DrawerViewModel.cs",
-              "RelativeToolTip": "OfflinePOS.Cashier\\ViewModels\\DrawerViewModel.cs",
-              "ViewState": "AgIAAHwAAAAAAAAAAAAUwIIAAAANAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-18T14:26:09.677Z",
-              "EditorCaption": ""
-            }
-          ]
-        }
-      ]
+      "DocumentGroups": []
     }
   ]
 }

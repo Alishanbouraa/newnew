@@ -16,6 +16,9 @@ namespace OfflinePOS.Cashier
     /// </summary>
     public partial class MainWindow : Window
     {
+        // Remove the manually defined UI elements since they're now auto-generated
+        // from XAML with the same names
+
         private readonly IServiceProvider _serviceProvider;
         private readonly User _currentUser;
         private readonly ILogger<MainWindow> _logger;
@@ -32,6 +35,7 @@ namespace OfflinePOS.Cashier
             _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
+            // Use the auto-generated InitializeComponent method
             InitializeComponent();
 
             // Set user information
@@ -79,7 +83,7 @@ namespace OfflinePOS.Cashier
         /// </summary>
         /// <typeparam name="TView">View type</typeparam>
         /// <typeparam name="TViewModel">ViewModel type</typeparam>
-        private void NavigateToView<TView, TViewModel>()
+        public void NavigateToView<TView, TViewModel>()
             where TView : UserControl
             where TViewModel : ViewModelBase
         {
