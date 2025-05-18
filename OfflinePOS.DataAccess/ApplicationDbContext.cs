@@ -36,6 +36,15 @@ namespace OfflinePOS.DataAccess
         /// Products
         /// </summary>
         public DbSet<Product> Products { get; set; }
+        /// <summary>
+        /// Stock inventory
+        /// </summary>
+        public DbSet<Stock> Stocks { get; set; }
+
+        /// <summary>
+        /// Stock adjustment transactions
+        /// </summary>
+        public DbSet<StockAdjustment> StockAdjustments { get; set; }
 
         /// <summary>
         /// Customers
@@ -329,6 +338,30 @@ namespace OfflinePOS.DataAccess
                 .HasOne(dt => dt.RecordedBy)
                 .WithMany()
                 .HasForeignKey(dt => dt.RecordedById)
+                .OnDelete(DeleteBehavior.Restrict);
+            // Configure Stock entity
+            modelBuilder.Entity<Stock>()
+                .ToTable("Stocks")
+                .Property(s => s.RowVersion)
+                .IsRowVersion();
+
+            // Configure StockAdjustment entity
+            modelBuilder.Entity<StockAdjustment>()
+                .ToTable("StockAdjustments")
+                .Property(sa => sa.RowVersion)
+                .IsRowVersion();
+
+            // Configure relationships
+            modelBuilder.Entity<Stock>()
+                .HasOne(s => s.Product)
+                .WithOne(p => p.Stock)
+                .HasForeignKey<Stock>(s => s.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StockAdjustment>()
+                .HasOne(sa => sa.Product)
+                .WithMany(p => p.StockAdjustments)
+                .HasForeignKey(sa => sa.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             base.OnModelCreating(modelBuilder);

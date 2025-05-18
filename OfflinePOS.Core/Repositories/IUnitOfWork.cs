@@ -44,7 +44,15 @@ namespace OfflinePOS.Core.Repositories
         /// Repository for DrawerOperation entities
         /// </summary>
         IRepository<DrawerOperation> DrawerOperations { get; }
+        /// <summary>
+        /// Repository for Stock entities
+        /// </summary>
+        IRepository<Stock> Stocks { get; }
 
+        /// <summary>
+        /// Repository for StockAdjustment entities
+        /// </summary>
+        IRepository<StockAdjustment> StockAdjustments { get; }
         /// <summary>
         /// Repository for DrawerTransaction entities
         /// </summary>

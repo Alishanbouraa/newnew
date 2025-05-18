@@ -1,0 +1,180 @@
+﻿<UserControl x:Class="OfflinePOS.Admin.Views.ProductImportExportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:OfflinePOS.Admin.Views"
+             xmlns:converters="clr-namespace:OfflinePOS.Core.Converters;assembly=OfflinePOS.Core"
+             mc:Ignorable="d" 
+             d:DesignHeight="768" d:DesignWidth="1024"
+             Loaded="ProductImportExportView_Loaded">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+            <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2c3e50" Padding="15">
+            <TextBlock Text="Product Import/Export" Foreground="White" FontSize="20" FontWeight="Bold"/>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Tabs for Import/Export -->
+            <TabControl Grid.Row="0" Grid.RowSpan="2">
+                <!-- Import Tab -->
+                <TabItem Header="Import Products">
+                    <Grid Margin="20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Instructions -->
+                        <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,20">
+                            <Run Text="Import products from a CSV file. The file should have headers in the first row and follow the template format. You can download the template using the button below."/>
+                        </TextBlock>
+
+                        <!-- Template Download -->
+                        <Button Grid.Row="1" Content="Download Template" HorizontalAlignment="Left" Padding="15,5" Margin="0,0,0,20"
+                                Command="{Binding DownloadTemplateCommand}"/>
+
+                        <!-- File Selection -->
+                        <Grid Grid.Row="2" Margin="0,0,0,20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox Grid.Column="0" Text="{Binding FilePath}" IsReadOnly="True" Padding="5" Margin="0,0,10,0"/>
+                            <Button Grid.Column="1" Content="Browse..." Padding="15,5"
+                                    Command="{Binding BrowseImportCommand}"/>
+                        </Grid>
+
+                        <!-- Import Button -->
+                        <Button Grid.Row="3" Content="Import Products" HorizontalAlignment="Left" Padding="20,8" Margin="0,0,0,20"
+                                Command="{Binding ImportProductsCommand}" 
+                                Background="#27ae60" Foreground="White"/>
+
+                        <!-- Import Status -->
+                        <GroupBox Grid.Row="4" Header="Import Status" Margin="0,0,0,0">
+                            <Grid Margin="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="{Binding StatusMessage}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10"
+                                            Visibility="{Binding ProcessedCount, Converter={StaticResource StringToVisibilityConverter}}">
+                                    <TextBlock Text="Processed: "/>
+                                    <TextBlock Text="{Binding ProcessedCount}" FontWeight="Bold" Margin="5,0,0,0"/>
+                                    <TextBlock Text=" products"/>
+                                </StackPanel>
+
+                                <ProgressBar Grid.Row="2" Height="20" IsIndeterminate="True" 
+                                             Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            </Grid>
+                        </GroupBox>
+                    </Grid>
+                </TabItem>
+
+                <!-- Export Tab -->
+                <TabItem Header="Export Products">
+                    <Grid Margin="20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Instructions -->
+                        <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,20">
+                            <Run Text="Export all products to a CSV file. This will include product details, pricing, and inventory information. You can use this file for backup or to modify and re-import products."/>
+                        </TextBlock>
+
+                        <!-- File Selection -->
+                        <Grid Grid.Row="1" Margin="0,0,0,20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox Grid.Column="0" Text="{Binding FilePath}" IsReadOnly="True" Padding="5" Margin="0,0,10,0"/>
+                            <Button Grid.Column="1" Content="Browse..." Padding="15,5"
+                                    Command="{Binding BrowseExportCommand}"/>
+                        </Grid>
+
+                        <!-- Export Button -->
+                        <Button Grid.Row="2" Content="Export Products" HorizontalAlignment="Left" Padding="20,8" Margin="0,0,0,20"
+                                Command="{Binding ExportProductsCommand}" 
+                                Background="#3498db" Foreground="White"/>
+
+                        <!-- Export Status -->
+                        <GroupBox Grid.Row="3" Header="Export Status" Margin="0,0,0,0">
+                            <Grid Margin="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="{Binding StatusMessage}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10"
+                                            Visibility="{Binding ProcessedCount, Converter={StaticResource StringToVisibilityConverter}}">
+                                    <TextBlock Text="Exported: "/>
+                                    <TextBlock Text="{Binding ProcessedCount}" FontWeight="Bold" Margin="5,0,0,0"/>
+                                    <TextBlock Text=" products"/>
+                                </StackPanel>
+
+                                <ProgressBar Grid.Row="2" Height="20" IsIndeterminate="True" 
+                                             Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            </Grid>
+                        </GroupBox>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </Grid>
+
+        <!-- Status Bar -->
+        <StatusBar Grid.Row="2" Height="25">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusMessage}"/>
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <ProgressBar Width="100" Height="15" IsIndeterminate="True" 
+                             Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            </StatusBarItem>
+        </StatusBar>
+
+        <!-- Loading Overlay -->
+        <Grid Grid.Row="0" Grid.RowSpan="3" Background="#80000000"
+              Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TextBlock Text="{Binding StatusMessage}" Foreground="White" FontSize="16" 
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
+    </Grid>
+</UserControl>

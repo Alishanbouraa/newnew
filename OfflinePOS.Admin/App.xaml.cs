@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OfflinePOS.Admin.ViewModels;
 using OfflinePOS.Admin.Views;
 using OfflinePOS.Core.Diagnostics;
 using OfflinePOS.Core.Models;
@@ -90,7 +91,36 @@ namespace OfflinePOS.Admin
 
             // Register configuration
             services.AddSingleton(_configuration);
+            // OfflinePOS.Admin/App.xaml.cs - In the ConfigureServices method add these registrations
 
+            // Register Stock Service
+            services.AddTransient<IStockService, StockService>();
+
+            // Register ViewModels for Inventory Management
+            services.AddTransient(provider =>
+                new StockManagementViewModel(
+                    provider.GetRequiredService<IProductService>(),
+                    provider.GetRequiredService<IStockService>(),
+                    provider.GetRequiredService<ILogger<StockManagementViewModel>>(),
+                    _currentUser));
+
+            services.AddTransient(provider =>
+                new BarcodeManagementViewModel(
+                    provider.GetRequiredService<IProductService>(),
+                    provider.GetRequiredService<IStockService>(),
+                    provider.GetRequiredService<ILogger<BarcodeManagementViewModel>>(),
+                    _currentUser));
+
+            services.AddTransient(provider =>
+                new ProductImportExportViewModel(
+                    provider.GetRequiredService<IProductService>(),
+                    provider.GetRequiredService<ILogger<ProductImportExportViewModel>>(),
+                    _currentUser));
+
+            // Register Views
+            services.AddTransient<StockManagementView>();
+            services.AddTransient<BarcodeManagementView>();
+            services.AddTransient<ProductImportExportView>();
             // Register DbContext
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(

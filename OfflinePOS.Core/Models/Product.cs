@@ -1,4 +1,5 @@
 ﻿// OfflinePOS.Core/Models/Product.cs
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace OfflinePOS.Core.Models
@@ -72,8 +73,48 @@ namespace OfflinePOS.Core.Models
         /// Sale price for an individual item
         /// </summary>
         public decimal ItemSalePrice { get; set; }
+        /// <summary>
+        /// Vendor/supplier ID for the product
+        /// </summary>
+        public int? SupplierId { get; set; }
 
-        // Navigation property for Category
+        /// <summary>
+        /// Vendor/supplier product code
+        /// </summary>
+        [MaxLength(50)]
+        public string SupplierProductCode { get; set; }
+
+        /// <summary>
+        /// Manufacturer's suggested retail price
+        /// </summary>
+        public decimal MSRP { get; set; }
+
+        /// <summary>
+        /// Flag indicating if the product tracks inventory
+        /// </summary>
+        public bool TrackInventory { get; set; } = true;
+
+        /// <summary>
+        /// Flag indicating if the product can be sold when out of stock
+        /// </summary>
+        public bool AllowNegativeInventory { get; set; } = false;
+
+        /// <summary>
+        /// Weight of the item in kg
+        /// </summary>
+        public decimal? Weight { get; set; }
+
+        /// <summary>
+        /// Dimensions in format LxWxH (cm)
+        /// </summary>
+        [MaxLength(50)]
+        public string Dimensions { get; set; }
+
+
+        // Navigation properties
+        public virtual Stock Stock { get; set; }
+        public virtual Supplier Supplier { get; set; }
+        public virtual ICollection<StockAdjustment> StockAdjustments { get; set; } = new List<StockAdjustment>();
         public virtual Category Category { get; set; }
     }
 }

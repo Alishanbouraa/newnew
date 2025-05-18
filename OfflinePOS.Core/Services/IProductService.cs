@@ -57,7 +57,50 @@ namespace OfflinePOS.Core.Services
         /// <param name="id">Product ID</param>
         /// <returns>True if deleted successfully, false otherwise</returns>
         Task<bool> DeleteProductAsync(int id);
+        /// <summary>
+        /// Gets products by supplier ID
+        /// </summary>
+        /// <param name="supplierId">Supplier ID</param>
+        /// <returns>Products from the supplier</returns>
+        Task<IEnumerable<Product>> GetProductsBySupplierAsync(int supplierId);
 
+        /// <summary>
+        /// Gets products with low stock
+        /// </summary>
+        /// <returns>Products with low stock</returns>
+        Task<IEnumerable<Product>> GetLowStockProductsAsync();
+
+        /// <summary>
+        /// Generates a new unique barcode
+        /// </summary>
+        /// <param name="productId">Product ID</param>
+        /// <param name="barcodeType">Type of barcode (Box/Item)</param>
+        /// <returns>Generated barcode</returns>
+        Task<string> GenerateBarcodeAsync(int productId, string barcodeType);
+
+        /// <summary>
+        /// Updates product inventory settings
+        /// </summary>
+        /// <param name="productId">Product ID</param>
+        /// <param name="trackInventory">Whether to track inventory</param>
+        /// <param name="allowNegativeInventory">Whether to allow negative inventory</param>
+        /// <returns>Updated product</returns>
+        Task<Product> UpdateInventorySettingsAsync(int productId, bool trackInventory, bool allowNegativeInventory);
+
+        /// <summary>
+        /// Imports products from a CSV file
+        /// </summary>
+        /// <param name="filePath">Path to CSV file</param>
+        /// <param name="userId">User performing the import</param>
+        /// <returns>Number of products imported</returns>
+        Task<int> ImportProductsFromCsvAsync(string filePath, int userId);
+
+        /// <summary>
+        /// Exports products to a CSV file
+        /// </summary>
+        /// <param name="filePath">Path to save CSV file</param>
+        /// <returns>Number of products exported</returns>
+        Task<int> ExportProductsToCsvAsync(string filePath);
         /// <summary>
         /// Searches for products by name or barcode
         /// </summary>
