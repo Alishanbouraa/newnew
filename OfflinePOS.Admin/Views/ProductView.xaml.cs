@@ -1,5 +1,4 @@
-﻿// File: OfflinePOS.Admin/Views/ProductView.xaml.cs
-using OfflinePOS.Admin.ViewModels;
+﻿using OfflinePOS.Admin.ViewModels;
 using System;
 using System.Threading.Tasks;
 using System.Windows;
@@ -41,7 +40,7 @@ namespace OfflinePOS.Admin.Views
             {
                 if (_viewModel != null)
                 {
-                    await _viewModel.LoadProductsPublicAsync();
+                    await _viewModel.LoadDataAsync();
                 }
             }
             catch (Exception ex)

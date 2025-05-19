@@ -1,5 +1,4 @@
-﻿// OfflinePOS.DataAccess/Repositories/UnitOfWork.cs
-using Microsoft.EntityFrameworkCore.Storage;
+﻿using Microsoft.EntityFrameworkCore.Storage;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.Repositories;
 using System;
@@ -25,6 +24,9 @@ namespace OfflinePOS.DataAccess.Repositories
         private IRepository<DrawerOperation> _drawerOperations;
         private IRepository<DrawerTransaction> _drawerTransactions;
         private IRepository<CompanySetting> _companySettings;
+        private IRepository<Stock> _stocks;
+        private IRepository<StockAdjustment> _stockAdjustments;
+        private IRepository<Supplier> _suppliers;
 
         /// <summary>
         /// Initializes a new instance of the UnitOfWork class
@@ -40,16 +42,16 @@ namespace OfflinePOS.DataAccess.Repositories
 
         /// <inheritdoc/>
         public IRepository<Product> Products => _products ??= new Repository<Product>(_context);
-        // OfflinePOS.DataAccess/Repositories/UnitOfWork.cs - Add these properties and initialization
-
-        private IRepository<Stock> _stocks;
-        private IRepository<StockAdjustment> _stockAdjustments;
 
         /// <inheritdoc/>
         public IRepository<Stock> Stocks => _stocks ??= new Repository<Stock>(_context);
 
         /// <inheritdoc/>
         public IRepository<StockAdjustment> StockAdjustments => _stockAdjustments ??= new Repository<StockAdjustment>(_context);
+
+        /// <inheritdoc/>
+        public IRepository<Supplier> Suppliers => _suppliers ??= new Repository<Supplier>(_context);
+
         /// <inheritdoc/>
         public IRepository<Category> Categories => _categories ??= new Repository<Category>(_context);
 

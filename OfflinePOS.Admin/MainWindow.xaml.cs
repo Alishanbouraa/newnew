@@ -1,5 +1,4 @@
-﻿// File: OfflinePOS.Admin/MainWindow.xaml.cs
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Admin.Views;
 using OfflinePOS.Core.Models;
@@ -199,6 +198,10 @@ namespace OfflinePOS.Admin
                 var view = _serviceProvider.GetService<T>();
                 if (view != null)
                 {
+                    // Clear any existing content first to ensure proper initialization
+                    MainContent.Content = null;
+
+                    // Set the new content
                     MainContent.Content = view;
                     _logger?.LogInformation($"Loaded view: {typeof(T).Name}");
                 }

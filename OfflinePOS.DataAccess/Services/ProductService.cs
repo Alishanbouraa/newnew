@@ -1,5 +1,4 @@
-﻿// OfflinePOS.DataAccess/Services/ProductService.cs
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.Repositories;
@@ -9,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace OfflinePOS.DataAccess.Services
 {
@@ -19,16 +19,22 @@ namespace OfflinePOS.DataAccess.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<ProductService> _logger;
+        private readonly IServiceProvider _serviceProvider;
 
         /// <summary>
         /// Initializes a new instance of the ProductService class
         /// </summary>
         /// <param name="unitOfWork">Unit of work</param>
         /// <param name="logger">Logger</param>
-        public ProductService(IUnitOfWork unitOfWork, ILogger<ProductService> logger)
+        /// <param name="serviceProvider">Service provider for resolving dependencies</param>
+        public ProductService(
+            IUnitOfWork unitOfWork,
+            ILogger<ProductService> logger,
+            IServiceProvider serviceProvider = null)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _serviceProvider = serviceProvider; // This can be null if not provided
         }
 
         /// <inheritdoc/>
@@ -72,7 +78,6 @@ namespace OfflinePOS.DataAccess.Services
                 throw;
             }
         }
-        // OfflinePOS.DataAccess/Services/ProductService.cs - Add these methods to your class
 
         /// <inheritdoc/>
         public async Task<IEnumerable<Product>> GetProductsBySupplierAsync(int supplierId)
@@ -89,7 +94,6 @@ namespace OfflinePOS.DataAccess.Services
         }
 
         /// <inheritdoc/>
-        // OfflinePOS.DataAccess/Services/ProductService.cs - around line 96
         public async Task<IEnumerable<Product>> GetLowStockProductsAsync()
         {
             try
@@ -360,43 +364,6 @@ namespace OfflinePOS.DataAccess.Services
             }
         }
 
-        // Helper methods for CSV import/export
-        private string GetStringValue(Dictionary<string, string> data, string key, string defaultValue = null)
-        {
-            if (data.TryGetValue(key, out string value) && !string.IsNullOrEmpty(value))
-                return value;
-            return defaultValue;
-        }
-
-        private int GetIntValue(Dictionary<string, string> data, string key, int? defaultValue = null)
-        {
-            if (data.TryGetValue(key, out string value) && int.TryParse(value, out int intValue))
-                return intValue;
-            return defaultValue ?? 0;
-        }
-
-        private decimal GetDecimalValue(Dictionary<string, string> data, string key, decimal? defaultValue = null)
-        {
-            if (data.TryGetValue(key, out string value) && decimal.TryParse(value, out decimal decimalValue))
-                return decimalValue;
-            return defaultValue ?? 0;
-        }
-
-        private bool GetBoolValue(Dictionary<string, string> data, string key, bool defaultValue = false)
-        {
-            if (data.TryGetValue(key, out string value) && bool.TryParse(value, out bool boolValue))
-                return boolValue;
-            return defaultValue;
-        }
-
-        private string EscapeCsvField(string field)
-        {
-            if (string.IsNullOrEmpty(field))
-                return string.Empty;
-
-            // Escape quotes with double quotes
-            return field.Replace("\"", "\"\"");
-        }
         /// <inheritdoc/>
         public async Task<Product> GetProductByBarcodeAsync(string barcode)
         {
@@ -547,6 +514,62 @@ namespace OfflinePOS.DataAccess.Services
                 _logger.LogError(ex, "Error searching products with term {SearchTerm}", searchTerm);
                 throw;
             }
+        }
+
+        /// <inheritdoc/>
+        public async Task<IStockService> GetStockServiceAsync()
+        {
+            try
+            {
+                // Create a logger adapter for StockService
+                var stockServiceLogger = new LoggerAdapter<StockService>(_logger);
+
+                // Return a new instance of StockService
+                return new StockService(_unitOfWork, stockServiceLogger);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating stock service");
+                return null;
+            }
+        }
+
+        // Helper methods for CSV import/export
+        private string GetStringValue(Dictionary<string, string> data, string key, string defaultValue = null)
+        {
+            if (data.TryGetValue(key, out string value) && !string.IsNullOrEmpty(value))
+                return value;
+            return defaultValue;
+        }
+
+        private int GetIntValue(Dictionary<string, string> data, string key, int? defaultValue = null)
+        {
+            if (data.TryGetValue(key, out string value) && int.TryParse(value, out int intValue))
+                return intValue;
+            return defaultValue ?? 0;
+        }
+
+        private decimal GetDecimalValue(Dictionary<string, string> data, string key, decimal? defaultValue = null)
+        {
+            if (data.TryGetValue(key, out string value) && decimal.TryParse(value, out decimal decimalValue))
+                return decimalValue;
+            return defaultValue ?? 0;
+        }
+
+        private bool GetBoolValue(Dictionary<string, string> data, string key, bool defaultValue = false)
+        {
+            if (data.TryGetValue(key, out string value) && bool.TryParse(value, out bool boolValue))
+                return boolValue;
+            return defaultValue;
+        }
+
+        private string EscapeCsvField(string field)
+        {
+            if (string.IsNullOrEmpty(field))
+                return string.Empty;
+
+            // Escape quotes with double quotes
+            return field.Replace("\"", "\"\"");
         }
     }
 }

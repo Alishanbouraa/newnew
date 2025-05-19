@@ -1,5 +1,4 @@
-﻿// OfflinePOS.Core/Repositories/IUnitOfWork.cs
-using OfflinePOS.Core.Models;
+﻿using OfflinePOS.Core.Models;
 using System;
 using System.Threading.Tasks;
 
@@ -44,6 +43,7 @@ namespace OfflinePOS.Core.Repositories
         /// Repository for DrawerOperation entities
         /// </summary>
         IRepository<DrawerOperation> DrawerOperations { get; }
+
         /// <summary>
         /// Repository for Stock entities
         /// </summary>
@@ -53,6 +53,12 @@ namespace OfflinePOS.Core.Repositories
         /// Repository for StockAdjustment entities
         /// </summary>
         IRepository<StockAdjustment> StockAdjustments { get; }
+
+        /// <summary>
+        /// Repository for Supplier entities
+        /// </summary>
+        IRepository<Supplier> Suppliers { get; }
+
         /// <summary>
         /// Repository for DrawerTransaction entities
         /// </summary>

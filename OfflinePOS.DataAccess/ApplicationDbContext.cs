@@ -1,5 +1,4 @@
-﻿// OfflinePOS.DataAccess/ApplicationDbContext.cs
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using OfflinePOS.Core.Models;
 using System;
 using System.Threading;
@@ -36,6 +35,7 @@ namespace OfflinePOS.DataAccess
         /// Products
         /// </summary>
         public DbSet<Product> Products { get; set; }
+
         /// <summary>
         /// Stock inventory
         /// </summary>
@@ -70,6 +70,11 @@ namespace OfflinePOS.DataAccess
         /// Drawer transactions
         /// </summary>
         public DbSet<DrawerTransaction> DrawerTransactions { get; set; }
+
+        /// <summary>
+        /// Suppliers
+        /// </summary>
+        public DbSet<Supplier> Suppliers { get; set; }
 
         /// <summary>
         /// Creates a new instance of ApplicationDbContext
@@ -176,6 +181,12 @@ namespace OfflinePOS.DataAccess
                 .HasColumnType("decimal(18,2)");
             modelBuilder.Entity<Product>()
                 .Property(p => p.ItemSalePrice)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Product>()
+                .Property(p => p.MSRP)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Product>()
+                .Property(p => p.Weight)
                 .HasColumnType("decimal(18,2)");
 
             // Configure Category entity
@@ -284,6 +295,29 @@ namespace OfflinePOS.DataAccess
                 .Property(dt => dt.Amount)
                 .HasColumnType("decimal(18,2)");
 
+            // Configure Stock entity
+            modelBuilder.Entity<Stock>()
+                .ToTable("Stocks")
+                .Property(s => s.RowVersion)
+                .IsRowVersion();
+
+            // Configure StockAdjustment entity
+            modelBuilder.Entity<StockAdjustment>()
+                .ToTable("StockAdjustments")
+                .Property(sa => sa.RowVersion)
+                .IsRowVersion();
+
+            // Configure Supplier entity
+            modelBuilder.Entity<Supplier>()
+                .ToTable("Suppliers")
+                .Property(s => s.RowVersion)
+                .IsRowVersion();
+
+            // Configure decimal precision for Supplier entity
+            modelBuilder.Entity<Supplier>()
+                .Property(s => s.CurrentBalance)
+                .HasColumnType("decimal(18,2)");
+
             // Configure relationships
             modelBuilder.Entity<Product>()
                 .HasOne(p => p.Category)
@@ -339,19 +373,8 @@ namespace OfflinePOS.DataAccess
                 .WithMany()
                 .HasForeignKey(dt => dt.RecordedById)
                 .OnDelete(DeleteBehavior.Restrict);
-            // Configure Stock entity
-            modelBuilder.Entity<Stock>()
-                .ToTable("Stocks")
-                .Property(s => s.RowVersion)
-                .IsRowVersion();
 
-            // Configure StockAdjustment entity
-            modelBuilder.Entity<StockAdjustment>()
-                .ToTable("StockAdjustments")
-                .Property(sa => sa.RowVersion)
-                .IsRowVersion();
-
-            // Configure relationships
+            // Configure Stock relationships
             modelBuilder.Entity<Stock>()
                 .HasOne(s => s.Product)
                 .WithOne(p => p.Stock)
@@ -363,6 +386,14 @@ namespace OfflinePOS.DataAccess
                 .WithMany(p => p.StockAdjustments)
                 .HasForeignKey(sa => sa.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure Product-Supplier relationship
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Supplier)
+                .WithMany()
+                .HasForeignKey(p => p.SupplierId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
 
             base.OnModelCreating(modelBuilder);
         }

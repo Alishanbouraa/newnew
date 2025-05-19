@@ -1,5 +1,4 @@
-﻿// OfflinePOS.Core/Services/IProductService.cs
-using OfflinePOS.Core.Models;
+﻿using OfflinePOS.Core.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -57,6 +56,7 @@ namespace OfflinePOS.Core.Services
         /// <param name="id">Product ID</param>
         /// <returns>True if deleted successfully, false otherwise</returns>
         Task<bool> DeleteProductAsync(int id);
+
         /// <summary>
         /// Gets products by supplier ID
         /// </summary>
@@ -101,11 +101,18 @@ namespace OfflinePOS.Core.Services
         /// <param name="filePath">Path to save CSV file</param>
         /// <returns>Number of products exported</returns>
         Task<int> ExportProductsToCsvAsync(string filePath);
+
         /// <summary>
         /// Searches for products by name or barcode
         /// </summary>
         /// <param name="searchTerm">Search term</param>
         /// <returns>Matching products</returns>
         Task<IEnumerable<Product>> SearchProductsAsync(string searchTerm);
+
+        /// <summary>
+        /// Gets the stock service for product inventory management
+        /// </summary>
+        /// <returns>Stock service</returns>
+        Task<IStockService> GetStockServiceAsync();
     }
 }

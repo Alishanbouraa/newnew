@@ -191,17 +191,13 @@ namespace OfflinePOS.Admin.ViewModels
             // Set default adjustment type
             AdjustmentType = "Addition";
         }
-
         /// <summary>
-        /// Loads products from the database
+        /// Loads data from repositories
         /// </summary>
-        protected override async Task LoadProductsAsync()
+        /// <returns>Task representing the asynchronous operation</returns>
+        public async Task LoadProductsPublicAsync()
         {
-            await base.LoadProductsAsync();
-
-            // Clear selected product and stock
-            SelectedProduct = null;
-            SelectedStock = null;
+            await LoadDataAsync();
         }
 
         /// <summary>

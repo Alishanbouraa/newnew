@@ -1,5 +1,4 @@
-﻿// OfflinePOS.Admin/App.xaml.cs
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -91,46 +90,7 @@ namespace OfflinePOS.Admin
 
             // Register configuration
             services.AddSingleton(_configuration);
-            // OfflinePOS.Admin/App.xaml.cs - In the ConfigureServices method add these registrations
 
-            // Register Stock Service
-            services.AddTransient<IStockService, StockService>();
-
-            // Register ViewModels for Inventory Management
-            services.AddTransient(provider =>
-                new StockManagementViewModel(
-                    provider.GetRequiredService<IProductService>(),
-                    provider.GetRequiredService<IStockService>(),
-                    provider.GetRequiredService<ILogger<StockManagementViewModel>>(),
-                    _currentUser));
-
-            services.AddTransient(provider =>
-                new BarcodeManagementViewModel(
-                    provider.GetRequiredService<IProductService>(),
-                    provider.GetRequiredService<IStockService>(),
-                    provider.GetRequiredService<ILogger<BarcodeManagementViewModel>>(),
-                    _currentUser));
-
-            services.AddTransient(provider =>
-                new ProductImportExportViewModel(
-                    provider.GetRequiredService<IProductService>(),
-                    provider.GetRequiredService<ILogger<ProductImportExportViewModel>>(),
-                    _currentUser));
-            services.AddTransient<ICategoryService, CategoryService>();
-
-            services.AddTransient(provider =>
-                new ProductViewModel(
-                    provider.GetRequiredService<IProductService>(),
-                    provider.GetRequiredService<IStockService>(),
-                    provider.GetRequiredService<ICategoryService>(),
-                    provider.GetRequiredService<ILogger<ProductViewModel>>(),
-                    _currentUser));
-
-            services.AddTransient<ProductView>();
-            // Register Views
-            services.AddTransient<StockManagementView>();
-            services.AddTransient<BarcodeManagementView>();
-            services.AddTransient<ProductImportExportView>();
             // Register DbContext
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(
@@ -154,8 +114,59 @@ namespace OfflinePOS.Admin
             // Register services
             services.AddTransient<IAuthService, AuthService>();
             services.AddTransient<IProductService, ProductService>();
+            services.AddTransient<ICategoryService, CategoryService>();
+            services.AddTransient<ISupplierService, SupplierService>();
+            services.AddTransient<IStockService, StockService>();
             services.AddTransient<ITransactionService, TransactionService>();
             services.AddTransient<IDrawerService, DrawerService>();
+
+            // Register ViewModels for Inventory Management
+            services.AddTransient(provider =>
+                new StockManagementViewModel(
+                    provider.GetRequiredService<IProductService>(),
+                    provider.GetRequiredService<IStockService>(),
+                    provider.GetRequiredService<ILogger<StockManagementViewModel>>(),
+                    _currentUser));
+
+            services.AddTransient(provider =>
+                new BarcodeManagementViewModel(
+                    provider.GetRequiredService<IProductService>(),
+                    provider.GetRequiredService<IStockService>(),
+                    provider.GetRequiredService<ILogger<BarcodeManagementViewModel>>(),
+                    _currentUser));
+
+            services.AddTransient(provider =>
+                new ProductImportExportViewModel(
+                    provider.GetRequiredService<IProductService>(),
+                    provider.GetRequiredService<ILogger<ProductImportExportViewModel>>(),
+                    _currentUser));
+
+            services.AddTransient(provider =>
+                new ProductViewModel(
+                    provider.GetRequiredService<IProductService>(),
+                    provider.GetRequiredService<IStockService>(),
+                    provider.GetRequiredService<ICategoryService>(),
+                    provider.GetRequiredService<ISupplierService>(),
+                    provider.GetRequiredService<ILogger<ProductViewModel>>(),
+                    _currentUser,
+                    provider)); // Pass service provider for navigation
+
+            // Register Product Dialog ViewModel factory
+            services.AddTransient<Func<Product, ProductDialogViewModel>>(provider => (product) =>
+                new ProductDialogViewModel(
+                    provider.GetRequiredService<IProductService>(),
+                    provider.GetRequiredService<ICategoryService>(),
+                    provider.GetRequiredService<ISupplierService>(),
+                    provider.GetRequiredService<ILogger<ProductDialogViewModel>>(),
+                    _currentUser,
+                    product));
+
+            // Register Views
+            services.AddTransient<StockManagementView>();
+            services.AddTransient<BarcodeManagementView>();
+            services.AddTransient<ProductImportExportView>();
+            services.AddTransient<ProductView>();
+            services.AddTransient<ProductDialogView>();
 
             // Register windows - only the LoginView
             services.AddTransient<LoginView>();

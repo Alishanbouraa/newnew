@@ -1,5 +1,5 @@
-﻿// File: OfflinePOS.Admin/ViewModels/ProductViewModel.cs
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using OfflinePOS.Admin.Views;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.Services;
 using System;
@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace OfflinePOS.Admin.ViewModels
@@ -18,6 +19,8 @@ namespace OfflinePOS.Admin.ViewModels
     public class ProductViewModel : InventoryViewModelBase
     {
         private readonly ICategoryService _categoryService;
+        private readonly ISupplierService _supplierService;
+        private readonly IServiceProvider _serviceProvider;
         private Product _selectedProduct;
         private Category _selectedCategory;
         private ObservableCollection<Category> _categories;
@@ -25,7 +28,7 @@ namespace OfflinePOS.Admin.ViewModels
         /// <summary>
         /// Currently selected product
         /// </summary>
-        public Product SelectedProduct
+        public override Product SelectedProduct
         {
             get => _selectedProduct;
             set => SetProperty(ref _selectedProduct, value);
@@ -92,37 +95,50 @@ namespace OfflinePOS.Admin.ViewModels
         /// <param name="productService">Product service</param>
         /// <param name="stockService">Stock service</param>
         /// <param name="categoryService">Category service</param>
+        /// <param name="supplierService">Supplier service</param>
         /// <param name="logger">Logger</param>
         /// <param name="currentUser">Current user</param>
+        /// <param name="serviceProvider">Service provider for resolving dependencies</param>
         public ProductViewModel(
             IProductService productService,
             IStockService stockService,
             ICategoryService categoryService,
+            ISupplierService supplierService,
             ILogger<ProductViewModel> logger,
-            User currentUser)
+            User currentUser,
+            IServiceProvider serviceProvider)
             : base(productService, stockService, logger, currentUser)
         {
             _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
+            _supplierService = supplierService ?? throw new ArgumentNullException(nameof(supplierService));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
             // Initialize collections
             Categories = new ObservableCollection<Category>();
 
             // Initialize commands
             AddProductCommand = CreateCommand(AddProduct);
-            EditProductCommand = CreateCommand(EditProduct);
-            DeleteProductCommand = CreateCommand(DeleteProduct);
+            EditProductCommand = CreateCommand(EditProduct, CanEditProduct);
+            DeleteProductCommand = CreateCommand(DeleteProduct, CanDeleteProduct);
             ManageStockCommand = CreateCommand(ManageStock);
             ManageBarcodesCommand = CreateCommand(ManageBarcodes);
             ImportExportCommand = CreateCommand(ImportExport);
+        }
 
-            // Load categories
-            LoadCategories();
+        /// <summary>
+        /// Loads data from repositories
+        /// </summary>
+        /// <returns>Task representing the asynchronous operation</returns>
+        public override async Task LoadDataAsync()
+        {
+            await LoadCategories();
+            await base.LoadDataAsync();
         }
 
         /// <summary>
         /// Loads the list of categories
         /// </summary>
-        private async void LoadCategories()
+        private async Task LoadCategories()
         {
             try
             {
@@ -209,7 +225,7 @@ namespace OfflinePOS.Admin.ViewModels
             catch (Exception ex)
             {
                 StatusMessage = $"Error searching products: {ex.Message}";
-                _logger.LogError(ex, "Error searching products");
+                _logger.LogError(ex, "Error searching products with text: {SearchText}", SearchText);
             }
             finally
             {
@@ -223,24 +239,87 @@ namespace OfflinePOS.Admin.ViewModels
         /// <param name="parameter">Command parameter</param>
         private void AddProduct(object parameter)
         {
-            // In a real implementation, you would open a dialog to add a new product
-            MessageBox.Show("Add Product functionality not implemented yet.",
-                           "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                // Create the dialog view model
+                var dialogViewModel = new ProductDialogViewModel(
+                    _productService,
+                    _categoryService,
+                    _supplierService,
+                    _logger as ILogger<ProductDialogViewModel>, // Cast logger
+                    _currentUser);
+
+                // Create and show the dialog
+                var dialog = new ProductDialogView(dialogViewModel)
+                {
+                    Owner = Application.Current.MainWindow
+                };
+
+                var result = dialog.ShowDialog();
+
+                // Refresh products if dialog was successful
+                if (result == true)
+                {
+                    SearchProducts(null);
+                    StatusMessage = "Product added successfully";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error adding product: {ex.Message}";
+                _logger.LogError(ex, "Error adding product");
+            }
         }
 
         /// <summary>
         /// Opens the Edit Product dialog for the selected product
         /// </summary>
         /// <param name="parameter">Product to edit</param>
-        private void EditProduct(object parameter)
+        private async void EditProduct(object parameter)
         {
-            // In a real implementation, you would open a dialog to edit the product
-            var product = parameter as Product;
+            var product = parameter as Product ?? SelectedProduct;
             if (product == null)
                 return;
 
-            MessageBox.Show($"Edit Product functionality not implemented yet for product: {product.Name}",
-                           "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                // Get the complete product with navigation properties
+                var completeProduct = await _productService.GetProductByIdAsync(product.Id);
+                if (completeProduct == null)
+                {
+                    StatusMessage = "Product not found";
+                    return;
+                }
+
+                // Create the dialog view model
+                var dialogViewModel = new ProductDialogViewModel(
+                    _productService,
+                    _categoryService,
+                    _supplierService,
+                    _logger as ILogger<ProductDialogViewModel>, // Cast logger
+                    _currentUser,
+                    completeProduct);
+
+                // Create and show the dialog
+                var dialog = new ProductDialogView(dialogViewModel)
+                {
+                    Owner = Application.Current.MainWindow
+                };
+
+                var result = dialog.ShowDialog();
+
+                // Refresh products if dialog was successful
+                if (result == true)
+                {
+                    SearchProducts(null);
+                    StatusMessage = "Product updated successfully";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error editing product: {ex.Message}";
+                _logger.LogError(ex, "Error editing product {ProductId}", product.Id);
+            }
         }
 
         /// <summary>
@@ -249,7 +328,7 @@ namespace OfflinePOS.Admin.ViewModels
         /// <param name="parameter">Product to delete</param>
         private async void DeleteProduct(object parameter)
         {
-            var product = parameter as Product;
+            var product = parameter as Product ?? SelectedProduct;
             if (product == null)
                 return;
 
@@ -293,9 +372,35 @@ namespace OfflinePOS.Admin.ViewModels
         /// <param name="parameter">Command parameter</param>
         private void ManageStock(object parameter)
         {
-            // In a real implementation, this would navigate to the Stock Management view
-            MessageBox.Show("Navigation to Stock Management view not implemented yet.",
-                           "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                // Get the StockManagementView from the service provider
+                var stockView = _serviceProvider.GetService(typeof(StockManagementView)) as UserControl;
+                if (stockView != null)
+                {
+                    // Get the parent window's content control or frame
+                    var mainWindow = Application.Current.MainWindow;
+                    if (mainWindow != null)
+                    {
+                        // Find the content control by name
+                        var contentControl = mainWindow.FindName("MainContent") as ContentControl;
+                        if (contentControl != null)
+                        {
+                            contentControl.Content = stockView;
+                            return;
+                        }
+                    }
+                }
+
+                // Fallback if any of the above fails
+                MessageBox.Show("Navigation to Stock Management view not implemented yet.",
+                               "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error navigating to Stock Management: {ex.Message}";
+                _logger.LogError(ex, "Error navigating to Stock Management");
+            }
         }
 
         /// <summary>
@@ -304,9 +409,35 @@ namespace OfflinePOS.Admin.ViewModels
         /// <param name="parameter">Command parameter</param>
         private void ManageBarcodes(object parameter)
         {
-            // In a real implementation, this would navigate to the Barcode Management view
-            MessageBox.Show("Navigation to Barcode Management view not implemented yet.",
-                           "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                // Get the BarcodeManagementView from the service provider
+                var barcodeView = _serviceProvider.GetService(typeof(BarcodeManagementView)) as UserControl;
+                if (barcodeView != null)
+                {
+                    // Get the parent window's content control or frame
+                    var mainWindow = Application.Current.MainWindow;
+                    if (mainWindow != null)
+                    {
+                        // Find the content control by name
+                        var contentControl = mainWindow.FindName("MainContent") as ContentControl;
+                        if (contentControl != null)
+                        {
+                            contentControl.Content = barcodeView;
+                            return;
+                        }
+                    }
+                }
+
+                // Fallback if any of the above fails
+                MessageBox.Show("Navigation to Barcode Management view not implemented yet.",
+                               "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error navigating to Barcode Management: {ex.Message}";
+                _logger.LogError(ex, "Error navigating to Barcode Management");
+            }
         }
 
         /// <summary>
@@ -315,9 +446,55 @@ namespace OfflinePOS.Admin.ViewModels
         /// <param name="parameter">Command parameter</param>
         private void ImportExport(object parameter)
         {
-            // In a real implementation, this would navigate to the Import/Export view
-            MessageBox.Show("Navigation to Import/Export view not implemented yet.",
-                           "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                // Get the ProductImportExportView from the service provider
+                var importExportView = _serviceProvider.GetService(typeof(ProductImportExportView)) as UserControl;
+                if (importExportView != null)
+                {
+                    // Get the parent window's content control or frame
+                    var mainWindow = Application.Current.MainWindow;
+                    if (mainWindow != null)
+                    {
+                        // Find the content control by name
+                        var contentControl = mainWindow.FindName("MainContent") as ContentControl;
+                        if (contentControl != null)
+                        {
+                            contentControl.Content = importExportView;
+                            return;
+                        }
+                    }
+                }
+
+                // Fallback if any of the above fails
+                MessageBox.Show("Navigation to Import/Export view not implemented yet.",
+                               "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error navigating to Import/Export: {ex.Message}";
+                _logger.LogError(ex, "Error navigating to Import/Export");
+            }
+        }
+
+        /// <summary>
+        /// Determines if a product can be edited
+        /// </summary>
+        /// <param name="parameter">Command parameter</param>
+        /// <returns>True if a product can be edited, false otherwise</returns>
+        private bool CanEditProduct(object parameter)
+        {
+            return parameter is Product || SelectedProduct != null;
+        }
+
+        /// <summary>
+        /// Determines if a product can be deleted
+        /// </summary>
+        /// <param name="parameter">Command parameter</param>
+        /// <returns>True if a product can be deleted, false otherwise</returns>
+        private bool CanDeleteProduct(object parameter)
+        {
+            return parameter is Product || SelectedProduct != null;
         }
     }
 }
