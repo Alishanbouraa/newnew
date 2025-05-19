@@ -31,6 +31,10 @@ namespace OfflinePOS.DataAccess.Services
         }
 
         /// <inheritdoc/>
+        // File: OfflinePOS.DataAccess/Services/StockService.cs
+        // Update the GetStockByProductIdAsync method to initialize LocationCode
+
+        // File: OfflinePOS.DataAccess/Services/StockService.cs
         public async Task<Stock> GetStockByProductIdAsync(int productId)
         {
             try
@@ -54,6 +58,7 @@ namespace OfflinePOS.DataAccess.Services
                         MinimumItemLevel = product.ItemsPerBox / 2,
                         ReorderBoxQuantity = 1,
                         StockStatus = "Out",
+                        LocationCode = string.Empty, // Initialize with empty string
                         CreatedById = 1 // Default system user
                     };
 
@@ -69,7 +74,6 @@ namespace OfflinePOS.DataAccess.Services
                 throw;
             }
         }
-
         /// <inheritdoc/>
         public async Task<IEnumerable<(Product Product, Stock Stock)>> GetLowStockProductsAsync()
         {
@@ -122,7 +126,10 @@ namespace OfflinePOS.DataAccess.Services
         }
 
         /// <inheritdoc/>
-        // OfflinePOS.DataAccess/Services/StockService.cs (partial update - just the UpdateStockLevelsAsync method)
+        // File: OfflinePOS.DataAccess/Services/StockService.cs
+        // Update the implementation to match the interface
+
+        /// <inheritdoc/>
         public async Task<Stock> UpdateStockLevelsAsync(
             int productId,
             int boxQuantityChange,
@@ -130,7 +137,8 @@ namespace OfflinePOS.DataAccess.Services
             string adjustmentType,
             string reason,
             string reference,
-            int userId)
+            int userId,
+            string locationCode = null)
         {
             try
             {
@@ -146,6 +154,12 @@ namespace OfflinePOS.DataAccess.Services
 
                         if (product == null)
                             throw new InvalidOperationException($"Product with ID {productId} not found");
+
+                        // Set location code if provided and not already set
+                        if (!string.IsNullOrEmpty(locationCode) && string.IsNullOrEmpty(stock.LocationCode))
+                        {
+                            stock.LocationCode = locationCode;
+                        }
 
                         // Record previous quantities
                         int previousBoxQuantity = stock.BoxQuantity;

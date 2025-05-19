@@ -1,4 +1,4 @@
-﻿// OfflinePOS.DataAccess/ApplicationDbContext.cs
+﻿// File: OfflinePOS.DataAccess/ApplicationDbContext.cs
 using Microsoft.EntityFrameworkCore;
 using OfflinePOS.Core.Models;
 using System;
@@ -312,6 +312,12 @@ namespace OfflinePOS.DataAccess
                 .ToTable("Stocks")
                 .Property(s => s.RowVersion)
                 .IsRowVersion();
+
+            // Configure LocationCode to be optional (modification to fix NULL error)
+            modelBuilder.Entity<Stock>()
+                .Property(s => s.LocationCode)
+                .IsRequired(false)
+                .HasMaxLength(50);
 
             // Configure StockAdjustment entity
             modelBuilder.Entity<StockAdjustment>()

@@ -33,7 +33,7 @@ namespace OfflinePOS.Admin.ViewModels
         private bool _isBusy;
         private int _initialBoxQuantity;
         private int _initialItemQuantity;
-
+        private string _locationCode = string.Empty;
         /// <summary>
         /// Event raised when the dialog should be closed
         /// </summary>
@@ -125,7 +125,14 @@ namespace OfflinePOS.Admin.ViewModels
             get => _isBusy;
             set => SetProperty(ref _isBusy, value);
         }
-
+        /// <summary>
+        /// Location code for initial stock setup
+        /// </summary>
+        public string LocationCode
+        {
+            get => _locationCode;
+            set => SetProperty(ref _locationCode, value);
+        }
         /// <summary>
         /// Initial box quantity for new products
         /// </summary>
@@ -331,14 +338,24 @@ namespace OfflinePOS.Admin.ViewModels
                         var stockService = await _productService.GetStockServiceAsync();
                         if (stockService != null)
                         {
-                            await stockService.UpdateStockLevelsAsync(
-                                createdProduct.Id,
-                                InitialBoxQuantity,
-                                InitialItemQuantity,
-                                "Addition",
-                                "Initial stock",
-                                "INIT-STOCK",
-                                _currentUser.Id);
+                            try
+                            {
+                                // Pass the location code with the stock adjustment
+                                await stockService.UpdateStockLevelsAsync(
+                                    createdProduct.Id,
+                                    InitialBoxQuantity,
+                                    InitialItemQuantity,
+                                    "Addition",
+                                    "Initial stock",
+                                    "INIT-STOCK",
+                                    _currentUser.Id,
+                                    LocationCode);  // Pass the location code if your method supports it
+                            }
+                            catch (Exception ex)
+                            {
+                                ErrorMessage = $"Product created but failed to set initial stock: {ex.Message}";
+                                _logger.LogError(ex, "Error setting initial stock for product {ProductId}", createdProduct.Id);
+                            }
                         }
                     }
                 }
@@ -369,6 +386,7 @@ namespace OfflinePOS.Admin.ViewModels
         /// Validates the product data
         /// </summary>
         /// <returns>True if valid, false otherwise</returns>
+        // File: OfflinePOS.Admin/ViewModels/ProductDialogViewModel.cs
         private bool ValidateProduct()
         {
             // Clear previous error
@@ -387,16 +405,18 @@ namespace OfflinePOS.Admin.ViewModels
                 return false;
             }
 
-            // Description and Dimensions are now optional, so we don't need to validate them
-
             if (Product.ItemsPerBox <= 0)
             {
                 ErrorMessage = "Items per box must be greater than zero";
                 return false;
             }
 
-            // Check barcode uniqueness if provided
-            // Note: We're not checking here because we'll validate during save in the service
+            // Only require location code for new products with inventory tracking
+            if (IsNewProduct && Product.TrackInventory && InitialBoxQuantity > 0 && string.IsNullOrWhiteSpace(LocationCode))
+            {
+                ErrorMessage = "Location code is required for inventory tracking";
+                return false;
+            }
 
             return true;
         }

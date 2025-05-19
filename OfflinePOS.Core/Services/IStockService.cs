@@ -24,6 +24,9 @@ namespace OfflinePOS.Core.Services
         /// <returns>List of low stock products with their stock info</returns>
         Task<IEnumerable<(Product Product, Stock Stock)>> GetLowStockProductsAsync();
 
+        // File: OfflinePOS.Core/Services/IStockService.cs
+        // Update the method signature to include the locationCode parameter
+
         /// <summary>
         /// Updates stock levels for a product
         /// </summary>
@@ -34,6 +37,7 @@ namespace OfflinePOS.Core.Services
         /// <param name="reason">Reason for adjustment</param>
         /// <param name="reference">Reference information</param>
         /// <param name="userId">User making the adjustment</param>
+        /// <param name="locationCode">Optional location code</param>
         /// <returns>Updated stock</returns>
         Task<Stock> UpdateStockLevelsAsync(
             int productId,
@@ -42,7 +46,8 @@ namespace OfflinePOS.Core.Services
             string adjustmentType,
             string reason,
             string reference,
-            int userId);
+            int userId,
+            string locationCode = null);
 
         /// <summary>
         /// Converts boxes to items for a product
