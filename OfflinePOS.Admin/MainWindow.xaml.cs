@@ -146,7 +146,7 @@ namespace OfflinePOS.Admin
                             break;
                         case "Categories":
                             // Load CategoryView
-                            MainContent.Content = "Categories view not implemented yet";
+                            LoadView<CategoryView>();
                             break;
                         case "Suppliers":
                             // Load SupplierView

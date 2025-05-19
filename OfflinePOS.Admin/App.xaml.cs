@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿// File: OfflinePOS.Admin/App.xaml.cs
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -137,11 +138,11 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<IStockService>(),
                     provider.GetRequiredService<ILogger<BarcodeManagementViewModel>>(),
                     _currentUser));
-          
+
             services.AddTransient(provider =>
                 new ProductImportExportViewModel(
                     provider.GetRequiredService<IProductService>(),
-                    provider.GetRequiredService<IStockService>(), // Add this parameter
+                    provider.GetRequiredService<IStockService>(),
                     provider.GetRequiredService<ILogger<ProductImportExportViewModel>>(),
                     _currentUser));
 
@@ -154,6 +155,23 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<ILogger<ProductViewModel>>(),
                     _currentUser,
                     provider)); // Pass service provider for navigation
+
+            // New: Register CategoryViewModel and Views
+            services.AddTransient(provider =>
+                new CategoryViewModel(
+                    provider.GetRequiredService<ICategoryService>(),
+                    provider.GetRequiredService<ILogger<CategoryViewModel>>(),
+                    _currentUser,
+                    provider)); // Pass service provider for logger resolution
+
+            // Register CategoryDialogViewModel factory
+            services.AddTransient<Func<Category, bool, CategoryDialogViewModel>>(provider => (category, isNew) =>
+                new CategoryDialogViewModel(
+                    provider.GetRequiredService<ICategoryService>(),
+                    provider.GetRequiredService<ILogger<CategoryDialogViewModel>>(),
+                    _currentUser,
+                    category,
+                    isNew));
 
             // Register Product Dialog ViewModel factory
             services.AddTransient<Func<Product, ProductDialogViewModel>>(provider => (product) =>
@@ -171,6 +189,10 @@ namespace OfflinePOS.Admin
             services.AddTransient<ProductImportExportView>();
             services.AddTransient<ProductView>();
             services.AddTransient<ProductDialogView>();
+
+            // New: Register Category Views
+            services.AddTransient<CategoryView>();
+            services.AddTransient<CategoryDialogView>();
 
             // Register windows - only the LoginView
             services.AddTransient<LoginView>();
