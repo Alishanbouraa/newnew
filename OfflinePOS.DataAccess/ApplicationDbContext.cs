@@ -78,6 +78,21 @@ namespace OfflinePOS.DataAccess
         public DbSet<Supplier> Suppliers { get; set; }
 
         /// <summary>
+        /// Supplier invoices
+        /// </summary>
+        public DbSet<SupplierInvoice> SupplierInvoices { get; set; }
+
+        /// <summary>
+        /// Supplier invoice items
+        /// </summary>
+        public DbSet<SupplierInvoiceItem> SupplierInvoiceItems { get; set; }
+
+        /// <summary>
+        /// Supplier payments
+        /// </summary>
+        public DbSet<SupplierPayment> SupplierPayments { get; set; }
+
+        /// <summary>
         /// Creates a new instance of ApplicationDbContext
         /// </summary>
         /// <param name="options">The options to be used by the DbContext</param>
@@ -336,6 +351,51 @@ namespace OfflinePOS.DataAccess
                 .Property(s => s.CurrentBalance)
                 .HasColumnType("decimal(18,2)");
 
+            // Configure SupplierInvoice entity
+            modelBuilder.Entity<SupplierInvoice>()
+                .ToTable("SupplierInvoices")
+                .Property(si => si.RowVersion)
+                .IsRowVersion();
+
+            // Configure decimal precision for SupplierInvoice entity
+            modelBuilder.Entity<SupplierInvoice>()
+                .Property(si => si.TotalAmount)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<SupplierInvoice>()
+                .Property(si => si.PaidAmount)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<SupplierInvoice>()
+                .Property(si => si.RemainingBalance)
+                .HasColumnType("decimal(18,2)");
+
+            // Configure SupplierInvoiceItem entity
+            modelBuilder.Entity<SupplierInvoiceItem>()
+                .ToTable("SupplierInvoiceItems")
+                .Property(sii => sii.RowVersion)
+                .IsRowVersion();
+
+            // Configure decimal precision for SupplierInvoiceItem entity
+            modelBuilder.Entity<SupplierInvoiceItem>()
+                .Property(sii => sii.BoxPurchasePrice)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<SupplierInvoiceItem>()
+                .Property(sii => sii.ItemPurchasePrice)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<SupplierInvoiceItem>()
+                .Property(sii => sii.TotalAmount)
+                .HasColumnType("decimal(18,2)");
+
+            // Configure SupplierPayment entity
+            modelBuilder.Entity<SupplierPayment>()
+                .ToTable("SupplierPayments")
+                .Property(sp => sp.RowVersion)
+                .IsRowVersion();
+
+            // Configure decimal precision for SupplierPayment entity
+            modelBuilder.Entity<SupplierPayment>()
+                .Property(sp => sp.Amount)
+                .HasColumnType("decimal(18,2)");
+
             // Configure relationships
             modelBuilder.Entity<Product>()
                 .HasOne(p => p.Category)
@@ -412,6 +472,43 @@ namespace OfflinePOS.DataAccess
                 .HasForeignKey(p => p.SupplierId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure relationships for supplier invoices
+            modelBuilder.Entity<SupplierInvoice>()
+                .HasOne(si => si.Supplier)
+                .WithMany()
+                .HasForeignKey(si => si.SupplierId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SupplierInvoiceItem>()
+                .HasOne(sii => sii.Invoice)
+                .WithMany(si => si.Items)
+                .HasForeignKey(sii => sii.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SupplierInvoiceItem>()
+                .HasOne(sii => sii.Product)
+                .WithMany()
+                .HasForeignKey(sii => sii.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SupplierPayment>()
+                .HasOne(sp => sp.Supplier)
+                .WithMany()
+                .HasForeignKey(sp => sp.SupplierId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SupplierPayment>()
+                .HasOne(sp => sp.Invoice)
+                .WithMany(si => si.Payments)
+                .HasForeignKey(sp => sp.InvoiceId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SupplierPayment>()
+                .HasOne(sp => sp.ProcessedBy)
+                .WithMany()
+                .HasForeignKey(sp => sp.ProcessedById)
+                .OnDelete(DeleteBehavior.Restrict);
 
             base.OnModelCreating(modelBuilder);
         }

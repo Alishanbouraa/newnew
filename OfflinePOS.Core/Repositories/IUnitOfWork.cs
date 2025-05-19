@@ -1,4 +1,4 @@
-﻿// OfflinePOS.Core/Repositories/IUnitOfWork.cs
+﻿// File: OfflinePOS.Core/Repositories/IUnitOfWork.cs
 using OfflinePOS.Core.Models;
 using System;
 using System.Threading.Tasks;
@@ -23,6 +23,11 @@ namespace OfflinePOS.Core.Repositories
         IRepository<Supplier> Suppliers { get; }
         IRepository<DrawerTransaction> DrawerTransactions { get; }
         IRepository<CompanySetting> CompanySettings { get; }
+
+        // New repository properties for supplier invoice functionality
+        IRepository<SupplierInvoice> SupplierInvoices { get; }
+        IRepository<SupplierInvoiceItem> SupplierInvoiceItems { get; }
+        IRepository<SupplierPayment> SupplierPayments { get; }
 
         // Transaction methods
         void BeginTransaction();

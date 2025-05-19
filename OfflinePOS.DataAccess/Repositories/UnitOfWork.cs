@@ -1,4 +1,4 @@
-﻿// OfflinePOS.DataAccess/Repositories/UnitOfWork.cs
+﻿// File: OfflinePOS.DataAccess/Repositories/UnitOfWork.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,6 +50,11 @@ namespace OfflinePOS.DataAccess.Repositories
         public IRepository<DrawerTransaction> DrawerTransactions => GetRepository<DrawerTransaction>();
         public IRepository<CompanySetting> CompanySettings => GetRepository<CompanySetting>();
 
+        // New repository properties for supplier invoice functionality
+        public IRepository<SupplierInvoice> SupplierInvoices => GetRepository<SupplierInvoice>();
+        public IRepository<SupplierInvoiceItem> SupplierInvoiceItems => GetRepository<SupplierInvoiceItem>();
+        public IRepository<SupplierPayment> SupplierPayments => GetRepository<SupplierPayment>();
+
         /// <summary>
         /// Gets a repository of the specified type, creating it if necessary
         /// </summary>
@@ -60,43 +65,13 @@ namespace OfflinePOS.DataAccess.Repositories
                 _ => new Repository<T>(_context));
         }
 
-        /// <summary>
-        /// Executes a database operation with the appropriate execution strategy
-        /// </summary>
-        /// <typeparam name="TResult">Type of the result</typeparam>
-        /// <param name="operation">Operation to execute</param>
-        /// <returns>Result of the operation</returns>
-        public async Task<TResult> ExecuteWithStrategyAsync<TResult>(Func<Task<TResult>> operation)
-        {
-            var strategy = _context.Database.CreateExecutionStrategy();
-            return await strategy.ExecuteAsync(operation);
-        }
-
-        /// <summary>
-        /// Executes a database operation with the appropriate execution strategy
-        /// </summary>
-        /// <param name="operation">Operation to execute</param>
-        public async Task ExecuteWithStrategyAsync(Func<Task> operation)
-        {
-            var strategy = _context.Database.CreateExecutionStrategy();
-            await strategy.ExecuteAsync(async () =>
-            {
-                await operation();
-                return true;
-            });
-        }
-
         /// <inheritdoc/>
-        public async Task BeginTransactionAsync()
+        public void BeginTransaction()
         {
-            await _lock.WaitAsync();
-
+            _lock.Wait();
             try
             {
-                if (_transaction != null)
-                    throw new InvalidOperationException("A transaction is already in progress");
-
-                _transaction = await _context.Database.BeginTransactionAsync();
+                _transaction = _transaction ?? _context.Database.BeginTransaction();
             }
             finally
             {
@@ -105,16 +80,37 @@ namespace OfflinePOS.DataAccess.Repositories
         }
 
         /// <inheritdoc/>
-        public void BeginTransaction()
+        public async Task BeginTransactionAsync()
         {
-            _lock.Wait();
-
+            await _lock.WaitAsync();
             try
             {
-                if (_transaction != null)
-                    throw new InvalidOperationException("A transaction is already in progress");
+                _transaction = _transaction ?? await _context.Database.BeginTransactionAsync();
+            }
+            finally
+            {
+                _lock.Release();
+            }
+        }
 
-                _transaction = _context.Database.BeginTransaction();
+        /// <inheritdoc/>
+        public void CommitTransaction()
+        {
+            _lock.Wait();
+            try
+            {
+                if (_transaction == null)
+                    return;
+
+                try
+                {
+                    _transaction.Commit();
+                }
+                finally
+                {
+                    _transaction.Dispose();
+                    _transaction = null;
+                }
             }
             finally
             {
@@ -126,70 +122,23 @@ namespace OfflinePOS.DataAccess.Repositories
         public async Task CommitTransactionAsync()
         {
             await _lock.WaitAsync();
-
             try
             {
                 if (_transaction == null)
-                    throw new InvalidOperationException("No transaction is in progress");
+                    return;
 
-                await _transaction.CommitAsync();
+                try
+                {
+                    await _transaction.CommitAsync();
+                }
+                finally
+                {
+                    await _transaction.DisposeAsync();
+                    _transaction = null;
+                }
             }
             finally
             {
-                if (_transaction != null)
-                {
-                    _transaction.Dispose();
-                    _transaction = null;
-                }
-
-                _lock.Release();
-            }
-        }
-
-        /// <inheritdoc/>
-        public void CommitTransaction()
-        {
-            _lock.Wait();
-
-            try
-            {
-                if (_transaction == null)
-                    throw new InvalidOperationException("No transaction is in progress");
-
-                _transaction.Commit();
-            }
-            finally
-            {
-                if (_transaction != null)
-                {
-                    _transaction.Dispose();
-                    _transaction = null;
-                }
-
-                _lock.Release();
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task RollbackTransactionAsync()
-        {
-            await _lock.WaitAsync();
-
-            try
-            {
-                if (_transaction == null)
-                    throw new InvalidOperationException("No transaction is in progress");
-
-                await _transaction.RollbackAsync();
-            }
-            finally
-            {
-                if (_transaction != null)
-                {
-                    _transaction.Dispose();
-                    _transaction = null;
-                }
-
                 _lock.Release();
             }
         }
@@ -198,22 +147,48 @@ namespace OfflinePOS.DataAccess.Repositories
         public void RollbackTransaction()
         {
             _lock.Wait();
-
             try
             {
                 if (_transaction == null)
-                    throw new InvalidOperationException("No transaction is in progress");
+                    return;
 
-                _transaction.Rollback();
-            }
-            finally
-            {
-                if (_transaction != null)
+                try
+                {
+                    _transaction.Rollback();
+                }
+                finally
                 {
                     _transaction.Dispose();
                     _transaction = null;
                 }
+            }
+            finally
+            {
+                _lock.Release();
+            }
+        }
 
+        /// <inheritdoc/>
+        public async Task RollbackTransactionAsync()
+        {
+            await _lock.WaitAsync();
+            try
+            {
+                if (_transaction == null)
+                    return;
+
+                try
+                {
+                    await _transaction.RollbackAsync();
+                }
+                finally
+                {
+                    await _transaction.DisposeAsync();
+                    _transaction = null;
+                }
+            }
+            finally
+            {
                 _lock.Release();
             }
         }
@@ -221,19 +196,26 @@ namespace OfflinePOS.DataAccess.Repositories
         /// <inheritdoc/>
         public async Task<int> SaveChangesAsync()
         {
-            await _lock.WaitAsync();
-
-            try
-            {
-                return await _context.SaveChangesAsync();
-            }
-            finally
-            {
-                _lock.Release();
-            }
+            return await _context.SaveChangesAsync();
         }
 
         /// <inheritdoc/>
+        public async Task<TResult> ExecuteWithStrategyAsync<TResult>(Func<Task<TResult>> operation)
+        {
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(operation);
+        }
+
+        /// <inheritdoc/>
+        public async Task ExecuteWithStrategyAsync(Func<Task> operation)
+        {
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(operation);
+        }
+
+        /// <summary>
+        /// Disposes the context and resources
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
@@ -241,20 +223,28 @@ namespace OfflinePOS.DataAccess.Repositories
         }
 
         /// <summary>
-        /// Disposes resources used by this instance
+        /// Disposes the context and resources
         /// </summary>
-        /// <param name="disposing">True to dispose managed resources</param>
+        /// <param name="disposing">Whether to dispose managed resources</param>
         protected virtual void Dispose(bool disposing)
         {
             if (!_disposed)
             {
                 if (disposing)
                 {
-                    _transaction?.Dispose();
-                    _context.Dispose();
+                    // Release the lock
                     _lock.Dispose();
-                }
 
+                    // Dispose transaction if active
+                    if (_transaction != null)
+                    {
+                        _transaction.Dispose();
+                        _transaction = null;
+                    }
+
+                    // Dispose context
+                    _context.Dispose();
+                }
                 _disposed = true;
             }
         }

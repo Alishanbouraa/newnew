@@ -1,0 +1,201 @@
+﻿<Window x:Class="OfflinePOS.Admin.Views.SupplierInvoiceListView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:OfflinePOS.Admin.Views"
+        mc:Ignorable="d"
+        Title="{Binding WindowTitle}" 
+        Height="600" Width="900"
+        WindowStartupLocation="CenterOwner"
+        Loaded="Window_Loaded">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" 
+                   Text="{Binding WindowTitle}" 
+                   FontSize="18" 
+                   FontWeight="Bold" 
+                   Margin="0,0,0,10"/>
+
+        <!-- Filter Controls -->
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" 
+                       Text="From:" 
+                       VerticalAlignment="Center" 
+                       Margin="0,0,5,0"/>
+
+            <DatePicker Grid.Column="1" 
+                        SelectedDate="{Binding DateFrom}" 
+                        Margin="0,0,10,0"/>
+
+            <TextBlock Grid.Column="2" 
+                       Text="To:" 
+                       VerticalAlignment="Center" 
+                       Margin="0,0,5,0"/>
+
+            <DatePicker Grid.Column="3" 
+                        SelectedDate="{Binding DateTo}" 
+                        Margin="0,0,10,0"/>
+
+            <Button Grid.Column="4" 
+                    Content="Search" 
+                    Command="{Binding SearchCommand}" 
+                    Padding="10,5" 
+                    Margin="0,0,10,0" 
+                    Background="#2196F3" 
+                    Foreground="White"/>
+
+            <Button Grid.Column="6" 
+                    Content="Refresh" 
+                    Command="{Binding RefreshCommand}" 
+                    Padding="10,5" 
+                    Margin="0,0,10,0" 
+                    Background="#4CAF50" 
+                    Foreground="White"/>
+
+            <Button Grid.Column="7" 
+                    Content="Add Invoice" 
+                    Command="{Binding AddInvoiceCommand}" 
+                    Padding="10,5" 
+                    Background="#FF9800" 
+                    Foreground="White"/>
+        </Grid>
+
+        <!-- Invoices DataGrid -->
+        <DataGrid Grid.Row="2" 
+                  ItemsSource="{Binding Invoices}" 
+                  SelectedItem="{Binding SelectedInvoice}" 
+                  AutoGenerateColumns="False" 
+                  IsReadOnly="True" 
+                  SelectionMode="Single" 
+                  BorderThickness="1" 
+                  BorderBrush="#CCCCCC" 
+                  AlternatingRowBackground="#F5F5F5">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Invoice #" 
+                                    Binding="{Binding InvoiceNumber}" 
+                                    Width="120"/>
+
+                <DataGridTextColumn Header="Date" 
+                                    Binding="{Binding InvoiceDate, StringFormat=d}" 
+                                    Width="100"/>
+
+                <DataGridTextColumn Header="Due Date" 
+                                    Binding="{Binding DueDate, StringFormat=d}" 
+                                    Width="100"/>
+
+                <DataGridTextColumn Header="Total" 
+                                    Binding="{Binding TotalAmount, StringFormat=C2}" 
+                                    Width="100"/>
+
+                <DataGridTextColumn Header="Paid" 
+                                    Binding="{Binding PaidAmount, StringFormat=C2}" 
+                                    Width="100"/>
+
+                <DataGridTextColumn Header="Balance" 
+                                    Binding="{Binding RemainingBalance, StringFormat=C2}" 
+                                    Width="100"/>
+
+                <DataGridTextColumn Header="Status" 
+                                    Binding="{Binding Status}" 
+                                    Width="100"/>
+
+                <DataGridTemplateColumn Header="Actions" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Details" 
+                                        Command="{Binding DataContext.ViewDetailsCommand, 
+                                                 RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                        CommandParameter="{Binding}" 
+                                        Margin="5,0" 
+                                        Padding="8,3" 
+                                        Background="#2196F3" 
+                                        Foreground="White"/>
+
+                                <Button Content="Pay" 
+                                        Command="{Binding DataContext.MakePaymentCommand, 
+                                                 RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                        CommandParameter="{Binding}" 
+                                        Margin="5,0" 
+                                        Padding="8,3" 
+                                        Background="#4CAF50" 
+                                        Foreground="White" 
+                                        Visibility="{Binding Status, 
+                                                   Converter={StaticResource InverseStringMatchToVisibilityConverter}, 
+                                                   ConverterParameter=Cancelled}"/>
+
+                                <Button Content="Cancel" 
+                                        Command="{Binding DataContext.CancelInvoiceCommand, 
+                                                 RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                        CommandParameter="{Binding}" 
+                                        Margin="5,0" 
+                                        Padding="8,3" 
+                                        Background="#F44336" 
+                                        Foreground="White" 
+                                        Visibility="{Binding Status, 
+                                                   Converter={StaticResource InverseStringMatchToVisibilityConverter}, 
+                                                   ConverterParameter=Cancelled}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Summary -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,10,0,0">
+            <TextBlock Text="Total Unpaid Balance: " FontWeight="Bold"/>
+            <TextBlock Text="{Binding TotalUnpaid, StringFormat=C2}" Foreground="Red"/>
+        </StackPanel>
+
+        <!-- Status Bar -->
+        <Grid Grid.Row="4" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"/>
+
+            <Button Grid.Column="1" 
+                    Content="Close" 
+                    Command="{Binding CloseCommand}" 
+                    Width="80" 
+                    Padding="10,5" 
+                    Background="#9E9E9E" 
+                    Foreground="White"/>
+        </Grid>
+
+        <!-- Busy Indicator -->
+        <Border Grid.Row="0" 
+                Grid.RowSpan="5" 
+                Background="#80000000" 
+                Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="100" Height="10" Margin="0,0,0,10"/>
+                <TextBlock Text="{Binding StatusMessage}" Foreground="White" FontWeight="Bold"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
