@@ -62,7 +62,15 @@ namespace OfflinePOS.Admin.ViewModels
             get => _showItemBarcode;
             set => SetProperty(ref _showItemBarcode, value);
         }
-
+        // Add this method after the constructor
+        /// <summary>
+        /// Loads data from repositories
+        /// </summary>
+        /// <returns>Task representing the asynchronous operation</returns>
+        public async Task LoadProductsPublicAsync()
+        {
+            await LoadDataAsync();
+        }
         /// <summary>
         /// List of available barcode types
         /// </summary>

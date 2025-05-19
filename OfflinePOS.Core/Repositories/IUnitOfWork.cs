@@ -9,85 +9,31 @@ namespace OfflinePOS.Core.Repositories
     /// </summary>
     public interface IUnitOfWork : IDisposable
     {
-        /// <summary>
-        /// Repository for User entities
-        /// </summary>
+        // Repository properties (unchanged)
         IRepository<User> Users { get; }
-
-        /// <summary>
-        /// Repository for Product entities
-        /// </summary>
         IRepository<Product> Products { get; }
-
-        /// <summary>
-        /// Repository for Category entities
-        /// </summary>
         IRepository<Category> Categories { get; }
-
-        /// <summary>
-        /// Repository for Customer entities
-        /// </summary>
         IRepository<Customer> Customers { get; }
-
-        /// <summary>
-        /// Repository for Transaction entities
-        /// </summary>
         IRepository<Transaction> Transactions { get; }
-
-        /// <summary>
-        /// Repository for TransactionItem entities
-        /// </summary>
         IRepository<TransactionItem> TransactionItems { get; }
-
-        /// <summary>
-        /// Repository for DrawerOperation entities
-        /// </summary>
         IRepository<DrawerOperation> DrawerOperations { get; }
-
-        /// <summary>
-        /// Repository for Stock entities
-        /// </summary>
         IRepository<Stock> Stocks { get; }
-
-        /// <summary>
-        /// Repository for StockAdjustment entities
-        /// </summary>
         IRepository<StockAdjustment> StockAdjustments { get; }
-
-        /// <summary>
-        /// Repository for Supplier entities
-        /// </summary>
         IRepository<Supplier> Suppliers { get; }
-
-        /// <summary>
-        /// Repository for DrawerTransaction entities
-        /// </summary>
         IRepository<DrawerTransaction> DrawerTransactions { get; }
-
-        /// <summary>
-        /// Repository for CompanySetting entities
-        /// </summary>
         IRepository<CompanySetting> CompanySettings { get; }
 
-        /// <summary>
-        /// Begins a new database transaction
-        /// </summary>
+        // Existing transaction methods
         void BeginTransaction();
-
-        /// <summary>
-        /// Commits the current transaction
-        /// </summary>
         void CommitTransaction();
-
-        /// <summary>
-        /// Rolls back the current transaction
-        /// </summary>
         void RollbackTransaction();
 
-        /// <summary>
-        /// Saves all changes made through this unit of work to the database
-        /// </summary>
-        /// <returns>Number of state entries written to the database</returns>
+        // New async transaction methods
+        Task BeginTransactionAsync();
+        Task CommitTransactionAsync();
+        Task RollbackTransactionAsync();
+
+        // Save changes method (unchanged)
         Task<int> SaveChangesAsync();
     }
 }

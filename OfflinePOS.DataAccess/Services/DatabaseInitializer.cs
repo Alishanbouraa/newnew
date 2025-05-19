@@ -251,43 +251,46 @@ namespace OfflinePOS.DataAccess.Services
 
                 var suppliers = new[]
                 {
-                    new Supplier
-                    {
-                        Name = "TechSupply Inc.",
-                        PhoneNumber = "123-456-7890",
-                        Address = "123 Tech St, Innovation City",
-                        Email = "contact@techsupply.example",
-                        ContactPerson = "John Smith",
-                        PaymentTerms = "Net 30",
-                        CurrentBalance = 0,
-                        CreatedById = 1,
-                        IsActive = true
-                    },
-                    new Supplier
-                    {
-                        Name = "Global Foods Ltd.",
-                        PhoneNumber = "098-765-4321",
-                        Address = "456 Food Ave, Culinary Town",
-                        Email = "orders@globalfoods.example",
-                        ContactPerson = "Jane Doe",
-                        PaymentTerms = "COD",
-                        CurrentBalance = 0,
-                        CreatedById = 1,
-                        IsActive = true
-                    },
-                    new Supplier
-                    {
-                        Name = "Office Supplies Co.",
-                        PhoneNumber = "111-222-3333",
-                        Address = "789 Office Blvd, Business District",
-                        Email = "sales@officesupplies.example",
-                        ContactPerson = "Robert Johnson",
-                        PaymentTerms = "Net 15",
-                        CurrentBalance = 0,
-                        CreatedById = 1,
-                        IsActive = true
-                    }
-                };
+        new Supplier
+        {
+            Name = "TechSupply Inc.",
+            PhoneNumber = "123-456-7890",
+            Address = "123 Tech St, Innovation City",
+            Email = "contact@techsupply.example",
+            ContactPerson = "John Smith",
+            PaymentTerms = "Net 30",
+            CurrentBalance = 0,
+            TaxId = "TS-12345678", // Added TaxId value
+            CreatedById = 1,
+            IsActive = true
+        },
+        new Supplier
+        {
+            Name = "Global Foods Ltd.",
+            PhoneNumber = "098-765-4321",
+            Address = "456 Food Ave, Culinary Town",
+            Email = "orders@globalfoods.example",
+            ContactPerson = "Jane Doe",
+            PaymentTerms = "COD",
+            CurrentBalance = 0,
+            TaxId = "GF-87654321", // Added TaxId value
+            CreatedById = 1,
+            IsActive = true
+        },
+        new Supplier
+        {
+            Name = "Office Supplies Co.",
+            PhoneNumber = "111-222-3333",
+            Address = "789 Office Blvd, Business District",
+            Email = "sales@officesupplies.example",
+            ContactPerson = "Robert Johnson",
+            PaymentTerms = "Net 15",
+            CurrentBalance = 0,
+            TaxId = "OS-11223344", // Added TaxId value
+            CreatedById = 1,
+            IsActive = true
+        }
+    };
 
                 _dbContext.Suppliers.AddRange(suppliers);
                 await _dbContext.SaveChangesAsync();

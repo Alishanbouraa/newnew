@@ -246,7 +246,7 @@ namespace OfflinePOS.Admin.ViewModels
                     _productService,
                     _categoryService,
                     _supplierService,
-                    _logger as ILogger<ProductDialogViewModel>, // Cast logger
+                    (ILogger<ProductDialogViewModel>)_serviceProvider.GetService(typeof(ILogger<ProductDialogViewModel>)), // Get typed logger from service provider
                     _currentUser);
 
                 // Create and show the dialog
@@ -293,12 +293,12 @@ namespace OfflinePOS.Admin.ViewModels
 
                 // Create the dialog view model
                 var dialogViewModel = new ProductDialogViewModel(
-                    _productService,
-                    _categoryService,
-                    _supplierService,
-                    _logger as ILogger<ProductDialogViewModel>, // Cast logger
-                    _currentUser,
-                    completeProduct);
+         _productService,
+         _categoryService,
+         _supplierService,
+         (ILogger<ProductDialogViewModel>)_serviceProvider.GetService(typeof(ILogger<ProductDialogViewModel>)), // Get typed logger from service provider
+         _currentUser,
+         completeProduct);
 
                 // Create and show the dialog
                 var dialog = new ProductDialogView(dialogViewModel)

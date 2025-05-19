@@ -109,7 +109,10 @@ namespace OfflinePOS.Admin
 
             // Register repositories and UoW
             services.AddTransient(typeof(IRepository<>), typeof(Repository<>));
-            services.AddTransient<IUnitOfWork, UnitOfWork>();
+            services.AddTransient<IUnitOfWork>(provider =>
+                new UnitOfWork(
+                    provider.GetRequiredService<ApplicationDbContext>(),
+                    provider));
 
             // Register services
             services.AddTransient<IAuthService, AuthService>();
@@ -134,10 +137,11 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<IStockService>(),
                     provider.GetRequiredService<ILogger<BarcodeManagementViewModel>>(),
                     _currentUser));
-
+          
             services.AddTransient(provider =>
                 new ProductImportExportViewModel(
                     provider.GetRequiredService<IProductService>(),
+                    provider.GetRequiredService<IStockService>(), // Add this parameter
                     provider.GetRequiredService<ILogger<ProductImportExportViewModel>>(),
                     _currentUser));
 

@@ -25,7 +25,7 @@ namespace OfflinePOS.Core.Models
         /// Description of the product
         /// </summary>
         [MaxLength(500)]
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         /// <summary>
         /// Barcode for identifying boxes of the product

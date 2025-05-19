@@ -70,10 +70,11 @@ namespace OfflinePOS.Admin.ViewModels
         /// <param name="logger">Logger</param>
         /// <param name="currentUser">Current user</param>
         public ProductImportExportViewModel(
-            IProductService productService,
-            ILogger<ProductImportExportViewModel> logger,
-            User currentUser)
-            : base(productService, null, logger, currentUser)
+          IProductService productService,
+          IStockService stockService, // Add this parameter
+          ILogger<ProductImportExportViewModel> logger,
+          User currentUser)
+          : base(productService, stockService, logger, currentUser)
         {
             // Initialize commands
             DownloadTemplateCommand = CreateCommand(DownloadTemplate);

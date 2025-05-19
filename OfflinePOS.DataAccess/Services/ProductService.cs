@@ -216,7 +216,7 @@ namespace OfflinePOS.DataAccess.Services
                             var product = new Product
                             {
                                 Name = GetStringValue(data, "Name"),
-                                Description = GetStringValue(data, "Description", ""),
+                                Description = GetStringValue(data, "Description", string.Empty),
                                 CategoryId = GetIntValue(data, "CategoryId", 1),
                                 BoxBarcode = GetStringValue(data, "BoxBarcode", ""),
                                 ItemBarcode = GetStringValue(data, "ItemBarcode", ""),
@@ -392,6 +392,12 @@ namespace OfflinePOS.DataAccess.Services
 
             try
             {
+
+                if (product.Description == null)
+                {
+                    product.Description = string.Empty;
+                }
+
                 // Check if product with the same barcodes already exists
                 if (!string.IsNullOrEmpty(product.BoxBarcode))
                 {

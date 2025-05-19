@@ -210,7 +210,8 @@ namespace OfflinePOS.Admin.ViewModels
                     ItemsPerBox = 1,
                     TrackInventory = true,
                     AllowNegativeInventory = false,
-                    CreatedById = _currentUser.Id
+                    CreatedById = _currentUser.Id,
+                    Description = string.Empty
                 };
             }
             else
@@ -301,6 +302,11 @@ namespace OfflinePOS.Admin.ViewModels
             {
                 IsBusy = true;
 
+                if (Product.Description == null)
+                {
+                    Product.Description = string.Empty;
+                }
+
                 // Update product with selected category and supplier
                 if (SelectedCategory != null)
                 {
@@ -383,6 +389,11 @@ namespace OfflinePOS.Admin.ViewModels
             {
                 ErrorMessage = "Category is required";
                 return false;
+            }
+
+            if (Product.Description == null)
+            {
+                Product.Description = string.Empty;
             }
 
             if (Product.ItemsPerBox <= 0)
@@ -469,7 +480,7 @@ namespace OfflinePOS.Admin.ViewModels
                 Id = source.Id,
                 CategoryId = source.CategoryId,
                 Name = source.Name,
-                Description = source.Description,
+                Description = source.Description ?? string.Empty,
                 BoxBarcode = source.BoxBarcode,
                 ItemBarcode = source.ItemBarcode,
                 ItemsPerBox = source.ItemsPerBox,

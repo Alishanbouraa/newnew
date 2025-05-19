@@ -1,53 +1,77 @@
-﻿using OfflinePOS.Core.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using OfflinePOS.Admin.ViewModels;
+using System;
+using System.Windows;
 
-namespace OfflinePOS.Core.Services
+namespace OfflinePOS.Admin.Views
 {
     /// <summary>
-    /// Service for managing suppliers/vendors
+    /// Interaction logic for ProductDialogView.xaml
     /// </summary>
-    public interface ISupplierService
+    public partial class ProductDialogView : Window
     {
-        /// <summary>
-        /// Gets all active suppliers
-        /// </summary>
-        /// <returns>List of active suppliers</returns>
-        Task<IEnumerable<Supplier>> GetAllSuppliersAsync();
+        private readonly ProductDialogViewModel _viewModel;
 
         /// <summary>
-        /// Gets a supplier by ID
+        /// Initializes a new instance of the ProductDialogView class
         /// </summary>
-        /// <param name="id">Supplier ID</param>
-        /// <returns>Supplier if found, null otherwise</returns>
-        Task<Supplier> GetSupplierByIdAsync(int id);
+        public ProductDialogView()
+        {
+            InitializeComponent();
+        }
 
         /// <summary>
-        /// Creates a new supplier
+        /// Initializes a new instance of the ProductDialogView class with the specified ViewModel
         /// </summary>
-        /// <param name="supplier">Supplier to create</param>
-        /// <returns>Created supplier</returns>
-        Task<Supplier> CreateSupplierAsync(Supplier supplier);
+        /// <param name="viewModel">ViewModel for the dialog</param>
+        public ProductDialogView(ProductDialogViewModel viewModel) : this()
+        {
+            _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+            DataContext = _viewModel;
+
+            // Subscribe to close request event from ViewModel
+            if (_viewModel != null)
+            {
+                _viewModel.CloseRequested += ViewModel_CloseRequested;
+
+                // Load data after initialization
+                this.Loaded += async (s, e) =>
+                {
+                    try
+                    {
+                        await _viewModel.LoadDataAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error loading data: {ex.Message}",
+                                        "Data Loading Error",
+                                        MessageBoxButton.OK,
+                                        MessageBoxImage.Error);
+                    }
+                };
+            }
+        }
 
         /// <summary>
-        /// Updates an existing supplier
+        /// Handles the ViewModel's close request event
         /// </summary>
-        /// <param name="supplier">Supplier to update</param>
-        /// <returns>True if updated successfully, false otherwise</returns>
-        Task<bool> UpdateSupplierAsync(Supplier supplier);
+        private void ViewModel_CloseRequested(object sender, bool dialogResult)
+        {
+            DialogResult = dialogResult;
+            Close();
+        }
 
         /// <summary>
-        /// Deletes a supplier by ID
+        /// Cleans up resources when the window is closed
         /// </summary>
-        /// <param name="id">Supplier ID</param>
-        /// <returns>True if deleted successfully, false otherwise</returns>
-        Task<bool> DeleteSupplierAsync(int id);
+        protected override void OnClosed(EventArgs e)
+        {
+            // Unsubscribe from events to prevent memory leaks
+            if (_viewModel != null)
+            {
+                _viewModel.CloseRequested -= ViewModel_CloseRequested;
+            }
 
-        /// <summary>
-        /// Searches for suppliers by name or contact info
-        /// </summary>
-        /// <param name="searchTerm">Search term</param>
-        /// <returns>Matching suppliers</returns>
-        Task<IEnumerable<Supplier>> SearchSuppliersAsync(string searchTerm);
+            base.OnClosed(e);
+        }
     }
 }
