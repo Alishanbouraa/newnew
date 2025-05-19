@@ -1,4 +1,5 @@
-﻿using OfflinePOS.Core.Models;
+﻿// OfflinePOS.Core/Repositories/IUnitOfWork.cs
+using OfflinePOS.Core.Models;
 using System;
 using System.Threading.Tasks;
 
@@ -9,7 +10,7 @@ namespace OfflinePOS.Core.Repositories
     /// </summary>
     public interface IUnitOfWork : IDisposable
     {
-        // Repository properties (unchanged)
+        // Repository properties
         IRepository<User> Users { get; }
         IRepository<Product> Products { get; }
         IRepository<Category> Categories { get; }
@@ -23,17 +24,32 @@ namespace OfflinePOS.Core.Repositories
         IRepository<DrawerTransaction> DrawerTransactions { get; }
         IRepository<CompanySetting> CompanySettings { get; }
 
-        // Existing transaction methods
+        // Transaction methods
         void BeginTransaction();
         void CommitTransaction();
         void RollbackTransaction();
 
-        // New async transaction methods
+        // Async transaction methods
         Task BeginTransactionAsync();
         Task CommitTransactionAsync();
         Task RollbackTransactionAsync();
 
-        // Save changes method (unchanged)
+        // Save changes method
         Task<int> SaveChangesAsync();
+
+        /// <summary>
+        /// Executes a database operation with retry logic
+        /// </summary>
+        /// <typeparam name="TResult">The type of the result</typeparam>
+        /// <param name="operation">The operation to execute</param>
+        /// <returns>The result of the operation</returns>
+        Task<TResult> ExecuteWithStrategyAsync<TResult>(Func<Task<TResult>> operation);
+
+        /// <summary>
+        /// Executes a database operation with retry logic
+        /// </summary>
+        /// <param name="operation">The operation to execute</param>
+        /// <returns>A task representing the asynchronous operation</returns>
+        Task ExecuteWithStrategyAsync(Func<Task> operation);
     }
 }

@@ -1,4 +1,5 @@
-﻿<Window x:Class="OfflinePOS.Admin.Views.ProductDialogView"
+﻿<!-- OfflinePOS.Admin/Views/ProductDialogView.xaml -->
+<Window x:Class="OfflinePOS.Admin.Views.ProductDialogView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -70,7 +71,7 @@
                              Style="{StaticResource FieldStyle}"/>
 
                     <!-- Product Description -->
-                    <TextBlock Text="Description" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBlock Text="Description (optional)" Style="{StaticResource FieldLabelStyle}"/>
                     <TextBox Text="{Binding Product.Description, UpdateSourceTrigger=PropertyChanged}" 
                              TextWrapping="Wrap"
                              AcceptsReturn="True"
@@ -155,7 +156,7 @@
                              Style="{StaticResource FieldStyle}"/>
 
                     <!-- Box Barcode -->
-                    <TextBlock Text="Box Barcode" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBlock Text="Box Barcode *" Style="{StaticResource FieldLabelStyle}"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -168,7 +169,7 @@
                     </Grid>
 
                     <!-- Item Barcode -->
-                    <TextBlock Text="Item Barcode" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBlock Text="Item Barcode *" Style="{StaticResource FieldLabelStyle}"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -184,11 +185,11 @@
                     <GroupBox Header="Inventory Settings" Margin="0,0,0,15">
                         <StackPanel Margin="10">
                             <CheckBox Content="Track Inventory" 
-                                      IsChecked="{Binding Product.TrackInventory}"
-                                      Margin="0,0,0,10"/>
+                                  IsChecked="{Binding Product.TrackInventory}"
+                                  Margin="0,0,0,10"/>
                             <CheckBox Content="Allow Negative Inventory" 
-                                      IsChecked="{Binding Product.AllowNegativeInventory}"
-                                      Margin="0,0,0,10"/>
+                                  IsChecked="{Binding Product.AllowNegativeInventory}"
+                                  Margin="0,0,0,10"/>
                         </StackPanel>
                     </GroupBox>
 
@@ -207,25 +208,25 @@
 
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Weight (kg): " Margin="0,0,10,10"/>
                             <TextBox Grid.Row="0" Grid.Column="1" 
-                                     Text="{Binding Product.Weight, UpdateSourceTrigger=PropertyChanged}"
-                                     behaviors:DecimalInputBehavior.IsEnabled="True"
-                                     Margin="0,0,0,10"/>
+                                 Text="{Binding Product.Weight, UpdateSourceTrigger=PropertyChanged}"
+                                 behaviors:DecimalInputBehavior.IsEnabled="True"
+                                 Margin="0,0,0,10"/>
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Dimensions: " Margin="0,0,10,10"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Dimensions (optional): " Margin="0,0,10,10"/>
                             <TextBox Grid.Row="1" Grid.Column="1" 
-                                     Text="{Binding Product.Dimensions, UpdateSourceTrigger=PropertyChanged}"
-                                     Margin="0,0,0,10"/>
+                                 Text="{Binding Product.Dimensions, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,10"/>
 
                             <TextBlock Grid.Row="2" Grid.Column="0" Text="MSRP: " Margin="0,0,10,0"/>
                             <TextBox Grid.Row="2" Grid.Column="1" 
-                                     Text="{Binding Product.MSRP, StringFormat=\{0:N2\}, UpdateSourceTrigger=PropertyChanged}"
-                                     behaviors:DecimalInputBehavior.IsEnabled="True"/>
+                                 Text="{Binding Product.MSRP, StringFormat=\{0:N2\}, UpdateSourceTrigger=PropertyChanged}"
+                                 behaviors:DecimalInputBehavior.IsEnabled="True"/>
                         </Grid>
                     </GroupBox>
 
                     <!-- Initial Stock -->
                     <GroupBox Header="Initial Stock" Margin="0,0,0,15"
-                              Visibility="{Binding IsNewProduct, Converter={StaticResource BooleanToVisibilityConverter}}">
+                          Visibility="{Binding IsNewProduct, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <Grid Margin="10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -240,12 +241,12 @@
                             <TextBlock Grid.Row="0" Grid.Column="1" Text="Item Quantity" Margin="0,0,0,5"/>
 
                             <TextBox Grid.Row="1" Grid.Column="0" 
-                                     Text="{Binding InitialBoxQuantity, UpdateSourceTrigger=PropertyChanged}"
-                                     behaviors:DecimalInputBehavior.IsEnabled="True"
-                                     Margin="0,0,5,0"/>
+                                 Text="{Binding InitialBoxQuantity, UpdateSourceTrigger=PropertyChanged}"
+                                 behaviors:DecimalInputBehavior.IsEnabled="True"
+                                 Margin="0,0,5,0"/>
                             <TextBox Grid.Row="1" Grid.Column="1" 
-                                     Text="{Binding InitialItemQuantity, UpdateSourceTrigger=PropertyChanged}"
-                                     behaviors:DecimalInputBehavior.IsEnabled="True"/>
+                                 Text="{Binding InitialItemQuantity, UpdateSourceTrigger=PropertyChanged}"
+                                 behaviors:DecimalInputBehavior.IsEnabled="True"/>
                         </Grid>
                     </GroupBox>
                 </StackPanel>
@@ -262,23 +263,23 @@
 
             <!-- Error Message -->
             <TextBlock Grid.Column="0" Text="{Binding ErrorMessage}" 
-                       Foreground="Red" VerticalAlignment="Center"
-                       Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibilityConverter}}"/>
+                   Foreground="Red" VerticalAlignment="Center"
+                   Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibilityConverter}}"/>
 
             <!-- Buttons -->
             <Button Grid.Column="1" Content="Cancel" Width="100" 
-                    Margin="0,0,10,0" Padding="10,5"
-                    Command="{Binding CancelCommand}"/>
+                Margin="0,0,10,0" Padding="10,5"
+                Command="{Binding CancelCommand}"/>
             <Button Grid.Column="2" Content="Save" Width="100" 
-                    Padding="10,5" Background="#27ae60" Foreground="White"
-                    Command="{Binding SaveCommand}"/>
+                Padding="10,5" Background="#27ae60" Foreground="White"
+                Command="{Binding SaveCommand}"/>
         </Grid>
 
         <!-- Loading Overlay -->
         <Grid Grid.Row="0" Grid.RowSpan="3" Background="#80000000"
-              Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+          Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
             <TextBlock Text="{Binding StatusMessage}" Foreground="White" FontSize="16" 
-                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Grid>
     </Grid>
 </Window>

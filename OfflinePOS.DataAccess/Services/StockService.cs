@@ -122,6 +122,7 @@ namespace OfflinePOS.DataAccess.Services
         }
 
         /// <inheritdoc/>
+        // OfflinePOS.DataAccess/Services/StockService.cs (partial update - just the UpdateStockLevelsAsync method)
         public async Task<Stock> UpdateStockLevelsAsync(
             int productId,
             int boxQuantityChange,
@@ -133,106 +134,116 @@ namespace OfflinePOS.DataAccess.Services
         {
             try
             {
-                _unitOfWork.BeginTransaction();
-
-                // Get current stock and product
-                var stock = await GetStockByProductIdAsync(productId);
-                var product = await _unitOfWork.Products.GetByIdAsync(productId);
-
-                if (product == null)
-                    throw new InvalidOperationException($"Product with ID {productId} not found");
-
-                // Record previous quantities
-                int previousBoxQuantity = stock.BoxQuantity;
-                int previousItemQuantity = stock.ItemQuantity;
-
-                // Calculate new quantities
-                int newBoxQuantity = stock.BoxQuantity;
-                int newItemQuantity = stock.ItemQuantity;
-
-                // Apply adjustments based on type
-                switch (adjustmentType.ToLower())
+                return await _unitOfWork.ExecuteWithStrategyAsync(async () =>
                 {
-                    case "addition":
-                        newBoxQuantity += boxQuantityChange;
-                        newItemQuantity += itemQuantityChange;
-                        break;
+                    await _unitOfWork.BeginTransactionAsync();
 
-                    case "reduction":
-                        // Calculate total items
-                        int currentTotalItems = (stock.BoxQuantity * product.ItemsPerBox) + stock.ItemQuantity;
-                        int reductionTotalItems = (boxQuantityChange * product.ItemsPerBox) + itemQuantityChange;
+                    try
+                    {
+                        // Get current stock and product
+                        var stock = await GetStockByProductIdAsync(productId);
+                        var product = await _unitOfWork.Products.GetByIdAsync(productId);
 
-                        // Check if sufficient stock exists
-                        if (!product.AllowNegativeInventory && reductionTotalItems > currentTotalItems)
+                        if (product == null)
+                            throw new InvalidOperationException($"Product with ID {productId} not found");
+
+                        // Record previous quantities
+                        int previousBoxQuantity = stock.BoxQuantity;
+                        int previousItemQuantity = stock.ItemQuantity;
+
+                        // Calculate new quantities
+                        int newBoxQuantity = stock.BoxQuantity;
+                        int newItemQuantity = stock.ItemQuantity;
+
+                        // Apply adjustments based on type
+                        switch (adjustmentType.ToLower())
                         {
-                            throw new InvalidOperationException("Insufficient stock for reduction");
+                            case "addition":
+                                newBoxQuantity += boxQuantityChange;
+                                newItemQuantity += itemQuantityChange;
+                                break;
+
+                            case "reduction":
+                                // Calculate total items
+                                int currentTotalItems = (stock.BoxQuantity * product.ItemsPerBox) + stock.ItemQuantity;
+                                int reductionTotalItems = (boxQuantityChange * product.ItemsPerBox) + itemQuantityChange;
+
+                                // Check if sufficient stock exists
+                                if (!product.AllowNegativeInventory && reductionTotalItems > currentTotalItems)
+                                {
+                                    throw new InvalidOperationException("Insufficient stock for reduction");
+                                }
+
+                                newBoxQuantity -= boxQuantityChange;
+                                newItemQuantity -= itemQuantityChange;
+
+                                // Handle negative item quantity by converting boxes
+                                while (newItemQuantity < 0 && newBoxQuantity > 0)
+                                {
+                                    newBoxQuantity--;
+                                    newItemQuantity += product.ItemsPerBox;
+                                }
+
+                                // If still negative and we don't allow negative inventory, throw error
+                                if (!product.AllowNegativeInventory && (newBoxQuantity < 0 || newItemQuantity < 0))
+                                {
+                                    throw new InvalidOperationException("Insufficient stock for reduction");
+                                }
+                                break;
+
+                            case "inventory":
+                                // Direct update from inventory count
+                                newBoxQuantity = boxQuantityChange;
+                                newItemQuantity = itemQuantityChange;
+                                break;
+
+                            default:
+                                throw new ArgumentException($"Invalid adjustment type: {adjustmentType}");
                         }
 
-                        newBoxQuantity -= boxQuantityChange;
-                        newItemQuantity -= itemQuantityChange;
-
-                        // Handle negative item quantity by converting boxes
-                        while (newItemQuantity < 0 && newBoxQuantity > 0)
+                        // Create stock adjustment record
+                        var adjustment = new StockAdjustment
                         {
-                            newBoxQuantity--;
-                            newItemQuantity += product.ItemsPerBox;
-                        }
+                            ProductId = productId,
+                            AdjustmentType = adjustmentType,
+                            BoxQuantity = boxQuantityChange,
+                            ItemQuantity = itemQuantityChange,
+                            PreviousBoxQuantity = previousBoxQuantity,
+                            PreviousItemQuantity = previousItemQuantity,
+                            NewBoxQuantity = newBoxQuantity,
+                            NewItemQuantity = newItemQuantity,
+                            ReferenceNumber = reference,
+                            Reason = reason,
+                            AdjustmentDate = DateTime.Now,
+                            CreatedById = userId
+                        };
 
-                        // If still negative and we don't allow negative inventory, throw error
-                        if (!product.AllowNegativeInventory && (newBoxQuantity < 0 || newItemQuantity < 0))
-                        {
-                            throw new InvalidOperationException("Insufficient stock for reduction");
-                        }
-                        break;
+                        await _unitOfWork.StockAdjustments.AddAsync(adjustment);
 
-                    case "inventory":
-                        // Direct update from inventory count
-                        newBoxQuantity = boxQuantityChange;
-                        newItemQuantity = itemQuantityChange;
-                        break;
+                        // Update stock quantities
+                        stock.BoxQuantity = newBoxQuantity;
+                        stock.ItemQuantity = newItemQuantity;
+                        stock.LastUpdatedById = userId;
+                        stock.LastUpdatedDate = DateTime.Now;
 
-                    default:
-                        throw new ArgumentException($"Invalid adjustment type: {adjustmentType}");
-                }
+                        // Update stock status
+                        UpdateStockStatus(stock, product);
 
-                // Create stock adjustment record
-                var adjustment = new StockAdjustment
-                {
-                    ProductId = productId,
-                    AdjustmentType = adjustmentType,
-                    BoxQuantity = boxQuantityChange,
-                    ItemQuantity = itemQuantityChange,
-                    PreviousBoxQuantity = previousBoxQuantity,
-                    PreviousItemQuantity = previousItemQuantity,
-                    NewBoxQuantity = newBoxQuantity,
-                    NewItemQuantity = newItemQuantity,
-                    ReferenceNumber = reference,
-                    Reason = reason,
-                    AdjustmentDate = DateTime.Now,
-                    CreatedById = userId
-                };
+                        await _unitOfWork.Stocks.UpdateAsync(stock);
+                        await _unitOfWork.SaveChangesAsync();
 
-                await _unitOfWork.StockAdjustments.AddAsync(adjustment);
-
-                // Update stock quantities
-                stock.BoxQuantity = newBoxQuantity;
-                stock.ItemQuantity = newItemQuantity;
-                stock.LastUpdatedById = userId;
-                stock.LastUpdatedDate = DateTime.Now;
-
-                // Update stock status
-                UpdateStockStatus(stock, product);
-
-                await _unitOfWork.Stocks.UpdateAsync(stock);
-                await _unitOfWork.SaveChangesAsync();
-
-                _unitOfWork.CommitTransaction();
-                return stock;
+                        await _unitOfWork.CommitTransactionAsync();
+                        return stock;
+                    }
+                    catch
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        throw;
+                    }
+                });
             }
             catch (Exception ex)
             {
-                _unitOfWork.RollbackTransaction();
                 _logger.LogError(ex, "Error updating stock levels for product {ProductId}", productId);
                 throw;
             }

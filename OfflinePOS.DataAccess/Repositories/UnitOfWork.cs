@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿// OfflinePOS.DataAccess/Repositories/UnitOfWork.cs
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using OfflinePOS.Core.Models;
@@ -57,6 +58,32 @@ namespace OfflinePOS.DataAccess.Repositories
             return (IRepository<T>)_repositories.GetOrAdd(
                 typeof(T),
                 _ => new Repository<T>(_context));
+        }
+
+        /// <summary>
+        /// Executes a database operation with the appropriate execution strategy
+        /// </summary>
+        /// <typeparam name="TResult">Type of the result</typeparam>
+        /// <param name="operation">Operation to execute</param>
+        /// <returns>Result of the operation</returns>
+        public async Task<TResult> ExecuteWithStrategyAsync<TResult>(Func<Task<TResult>> operation)
+        {
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(operation);
+        }
+
+        /// <summary>
+        /// Executes a database operation with the appropriate execution strategy
+        /// </summary>
+        /// <param name="operation">Operation to execute</param>
+        public async Task ExecuteWithStrategyAsync(Func<Task> operation)
+        {
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
+            {
+                await operation();
+                return true;
+            });
         }
 
         /// <inheritdoc/>

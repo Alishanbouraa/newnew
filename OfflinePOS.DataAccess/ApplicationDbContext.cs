@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿// OfflinePOS.DataAccess/ApplicationDbContext.cs
+using Microsoft.EntityFrameworkCore;
 using OfflinePOS.Core.Models;
 using System;
 using System.Threading;
@@ -162,6 +163,17 @@ namespace OfflinePOS.DataAccess
                 .ToTable("Products")
                 .Property(p => p.RowVersion)
                 .IsRowVersion();
+
+            // Configure Description and Dimensions to be optional
+            modelBuilder.Entity<Product>()
+                .Property(p => p.Description)
+                .IsRequired(false)
+                .HasMaxLength(500);
+
+            modelBuilder.Entity<Product>()
+                .Property(p => p.Dimensions)
+                .IsRequired(false)
+                .HasMaxLength(50);
 
             // Configure decimal precision for Product entity
             modelBuilder.Entity<Product>()

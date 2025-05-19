@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿// OfflinePOS.Admin/ViewModels/ProductDialogViewModel.cs
+using Microsoft.Extensions.Logging;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.MVVM;
 using OfflinePOS.Core.Services;
@@ -74,7 +75,7 @@ namespace OfflinePOS.Admin.ViewModels
                 {
                     if (_product != null)
                     {
-                        _product.SupplierId = value?.Id;
+                        _product.SupplierId = value?.Id > 0 ? value.Id : null;
                     }
                 }
             }
@@ -210,8 +211,8 @@ namespace OfflinePOS.Admin.ViewModels
                     ItemsPerBox = 1,
                     TrackInventory = true,
                     AllowNegativeInventory = false,
-                    CreatedById = _currentUser.Id,
-                    Description = string.Empty
+                    CreatedById = _currentUser.Id
+                    // Description and Dimensions are now optional, so we don't need to set defaults
                 };
             }
             else
@@ -302,11 +303,6 @@ namespace OfflinePOS.Admin.ViewModels
             {
                 IsBusy = true;
 
-                if (Product.Description == null)
-                {
-                    Product.Description = string.Empty;
-                }
-
                 // Update product with selected category and supplier
                 if (SelectedCategory != null)
                 {
@@ -391,10 +387,7 @@ namespace OfflinePOS.Admin.ViewModels
                 return false;
             }
 
-            if (Product.Description == null)
-            {
-                Product.Description = string.Empty;
-            }
+            // Description and Dimensions are now optional, so we don't need to validate them
 
             if (Product.ItemsPerBox <= 0)
             {
@@ -480,7 +473,7 @@ namespace OfflinePOS.Admin.ViewModels
                 Id = source.Id,
                 CategoryId = source.CategoryId,
                 Name = source.Name,
-                Description = source.Description ?? string.Empty,
+                Description = source.Description,  // Can be null now
                 BoxBarcode = source.BoxBarcode,
                 ItemBarcode = source.ItemBarcode,
                 ItemsPerBox = source.ItemsPerBox,
@@ -496,7 +489,7 @@ namespace OfflinePOS.Admin.ViewModels
                 TrackInventory = source.TrackInventory,
                 AllowNegativeInventory = source.AllowNegativeInventory,
                 Weight = source.Weight,
-                Dimensions = source.Dimensions,
+                Dimensions = source.Dimensions,  // Can be null now
                 CreatedById = source.CreatedById,
                 CreatedDate = source.CreatedDate,
                 IsActive = source.IsActive

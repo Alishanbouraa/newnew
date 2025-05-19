@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿// OfflinePOS.DataAccess/Services/ProductService.cs
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.Repositories;
@@ -216,7 +217,7 @@ namespace OfflinePOS.DataAccess.Services
                             var product = new Product
                             {
                                 Name = GetStringValue(data, "Name"),
-                                Description = GetStringValue(data, "Description", string.Empty),
+                                Description = GetStringValue(data, "Description", null),
                                 CategoryId = GetIntValue(data, "CategoryId", 1),
                                 BoxBarcode = GetStringValue(data, "BoxBarcode", ""),
                                 ItemBarcode = GetStringValue(data, "ItemBarcode", ""),
@@ -232,7 +233,7 @@ namespace OfflinePOS.DataAccess.Services
                                 TrackInventory = GetBoolValue(data, "TrackInventory", true),
                                 AllowNegativeInventory = GetBoolValue(data, "AllowNegativeInventory", false),
                                 Weight = GetDecimalValue(data, "Weight", null),
-                                Dimensions = GetStringValue(data, "Dimensions", ""),
+                                Dimensions = GetStringValue(data, "Dimensions", null),
                                 CreatedById = userId,
                                 IsActive = true
                             };
@@ -392,30 +393,30 @@ namespace OfflinePOS.DataAccess.Services
 
             try
             {
+                // We don't need to set defaults for Description and Dimensions anymore as they are now optional
+                // However, we should still check for other required fields
 
-                if (product.Description == null)
+                if (string.IsNullOrEmpty(product.SupplierProductCode))
+                    product.SupplierProductCode = string.Empty;
+
+                // Ensure we have barcodes
+                if (string.IsNullOrEmpty(product.BoxBarcode) || string.IsNullOrEmpty(product.ItemBarcode))
                 {
-                    product.Description = string.Empty;
+                    throw new InvalidOperationException("Box and Item barcodes are required");
                 }
 
                 // Check if product with the same barcodes already exists
-                if (!string.IsNullOrEmpty(product.BoxBarcode))
-                {
-                    var existingByBoxBarcode = await _unitOfWork.Products.ExistsAsync(
-                        p => p.BoxBarcode == product.BoxBarcode && p.IsActive);
+                var existingByBoxBarcode = await _unitOfWork.Products.ExistsAsync(
+                    p => p.BoxBarcode == product.BoxBarcode && p.IsActive);
 
-                    if (existingByBoxBarcode)
-                        throw new InvalidOperationException($"A product with box barcode {product.BoxBarcode} already exists");
-                }
+                if (existingByBoxBarcode)
+                    throw new InvalidOperationException($"A product with box barcode {product.BoxBarcode} already exists");
 
-                if (!string.IsNullOrEmpty(product.ItemBarcode))
-                {
-                    var existingByItemBarcode = await _unitOfWork.Products.ExistsAsync(
-                        p => p.ItemBarcode == product.ItemBarcode && p.IsActive);
+                var existingByItemBarcode = await _unitOfWork.Products.ExistsAsync(
+                    p => p.ItemBarcode == product.ItemBarcode && p.IsActive);
 
-                    if (existingByItemBarcode)
-                        throw new InvalidOperationException($"A product with item barcode {product.ItemBarcode} already exists");
-                }
+                if (existingByItemBarcode)
+                    throw new InvalidOperationException($"A product with item barcode {product.ItemBarcode} already exists");
 
                 await _unitOfWork.Products.AddAsync(product);
                 await _unitOfWork.SaveChangesAsync();

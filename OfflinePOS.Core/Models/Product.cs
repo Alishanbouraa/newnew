@@ -22,20 +22,22 @@ namespace OfflinePOS.Core.Models
         public string Name { get; set; }
 
         /// <summary>
-        /// Description of the product
+        /// Description of the product (optional)
         /// </summary>
         [MaxLength(500)]
-        public string Description { get; set; } = string.Empty;
+        public string? Description { get; set; }
 
         /// <summary>
         /// Barcode for identifying boxes of the product
         /// </summary>
+        [Required]
         [MaxLength(30)]
         public string BoxBarcode { get; set; }
 
         /// <summary>
         /// Barcode for identifying individual items
         /// </summary>
+        [Required]
         [MaxLength(30)]
         public string ItemBarcode { get; set; }
 
@@ -81,6 +83,7 @@ namespace OfflinePOS.Core.Models
         /// <summary>
         /// Vendor/supplier product code
         /// </summary>
+        [Required]
         [MaxLength(50)]
         public string SupplierProductCode { get; set; }
 
@@ -105,11 +108,10 @@ namespace OfflinePOS.Core.Models
         public decimal? Weight { get; set; }
 
         /// <summary>
-        /// Dimensions in format LxWxH (cm)
+        /// Dimensions in format LxWxH (cm) (optional)
         /// </summary>
         [MaxLength(50)]
-        public string Dimensions { get; set; }
-
+        public string? Dimensions { get; set; }
 
         // Navigation properties
         public virtual Stock Stock { get; set; }
