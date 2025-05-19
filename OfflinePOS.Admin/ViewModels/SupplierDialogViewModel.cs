@@ -179,6 +179,7 @@ namespace OfflinePOS.Admin.ViewModels
         /// <summary>
         /// Saves the supplier
         /// </summary>
+        // OfflinePOS.Admin/ViewModels/SupplierDialogViewModel.cs - Update SaveSupplier method
         private async void SaveSupplier(object parameter)
         {
             if (!ValidateSupplier())
@@ -205,6 +206,12 @@ namespace OfflinePOS.Admin.ViewModels
 
                 // Close the dialog with success
                 CloseRequested?.Invoke(this, true);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Handle specific business rule violations
+                ErrorMessage = ex.Message;
+                _logger.LogWarning(ex, "Business rule violation while saving supplier {SupplierId}", Supplier.Id);
             }
             catch (Exception ex)
             {

@@ -1,4 +1,5 @@
-﻿using OfflinePOS.Core.Models;
+﻿// OfflinePOS.Core/Services/ISupplierService.cs
+using OfflinePOS.Core.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -49,5 +50,12 @@ namespace OfflinePOS.Core.Services
         /// <param name="searchTerm">Search term</param>
         /// <returns>Matching suppliers</returns>
         Task<IEnumerable<Supplier>> SearchSuppliersAsync(string searchTerm);
+
+        /// <summary>
+        /// Gets suppliers associated with a specific product
+        /// </summary>
+        /// <param name="productId">Product ID</param>
+        /// <returns>Suppliers for the product</returns>
+        Task<IEnumerable<Supplier>> GetSuppliersByProductAsync(int productId);
     }
 }

@@ -1,5 +1,7 @@
 ﻿// OfflinePOS.Admin/ViewModels/SupplierInvoiceListViewModel.cs
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OfflinePOS.Admin.Views;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.MVVM;
 using OfflinePOS.Core.Services;
@@ -262,13 +264,51 @@ namespace OfflinePOS.Admin.ViewModels
         /// <summary>
         /// Makes a payment on the selected invoice
         /// </summary>
-        private void MakePayment(object parameter)
+        // Update to OfflinePOS.Admin/ViewModels/SupplierInvoiceListViewModel.cs - MakePayment method
+        private async void MakePayment(object parameter)
         {
-            // Implementation will be added later
-            MessageBox.Show($"Making payment on invoice {SelectedInvoice.InvoiceNumber} is not implemented yet.",
-                "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
+            var invoice = parameter as SupplierInvoice ?? SelectedInvoice;
+            if (invoice == null)
+                return;
 
+            try
+            {
+                IsBusy = true;
+                StatusMessage = "Preparing payment dialog...";
+
+                // Create the payment view model
+                var viewModel = new SupplierPaymentViewModel(
+                    _supplierInvoiceService,
+                    _serviceProvider.GetService<ILogger<SupplierPaymentViewModel>>(),
+                    _currentUser,
+                    _supplier,
+                    invoice);
+
+                // Create and show the dialog
+                var dialog = new SupplierPaymentDialogView(viewModel)
+                {
+                    Owner = Application.Current.MainWindow
+                };
+
+                var result = dialog.ShowDialog();
+
+                // Refresh invoices if payment was successful
+                if (result == true)
+                {
+                    await LoadInvoicesAsync();
+                    StatusMessage = "Payment processed successfully";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error processing payment: {ex.Message}";
+                _logger.LogError(ex, "Error processing payment for invoice {InvoiceId}", invoice.Id);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
         /// <summary>
         /// Cancels the selected invoice
         /// </summary>

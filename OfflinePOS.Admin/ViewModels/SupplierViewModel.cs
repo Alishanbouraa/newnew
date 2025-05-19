@@ -147,15 +147,57 @@ namespace OfflinePOS.Admin.ViewModels
                 IsBusy = false;
             }
         }
-
-        private void AddSupplier(object parameter)
+        // Update to OfflinePOS.Admin/ViewModels/SupplierViewModel.cs
+        private async void AddSupplier(object parameter)
         {
-            // Implementation for adding a supplier - will need a SupplierDialogViewModel and View
-            MessageBox.Show("Add Supplier functionality will be implemented soon.");
+            try
+            {
+                IsBusy = true;
+                StatusMessage = "Preparing to add supplier...";
+
+                // Create a new supplier object
+                var supplier = new Supplier
+                {
+                    IsActive = true,
+                    CreatedById = _currentUser.Id,
+                    CreatedDate = DateTime.Now,
+                    CurrentBalance = 0
+                };
+
+                // Create dialog view model
+                var viewModel = new SupplierDialogViewModel(
+                    _supplierService,
+                    _serviceProvider.GetService<ILogger<SupplierDialogViewModel>>(),
+                    _currentUser,
+                    null);  // Null indicates a new supplier
+
+                // Create and show the dialog
+                var dialog = new SupplierDialogView(viewModel)
+                {
+                    Owner = Application.Current.MainWindow
+                };
+
+                var result = dialog.ShowDialog();
+
+                // Refresh suppliers if dialog was successful
+                if (result == true)
+                {
+                    await LoadDataAsync();
+                    StatusMessage = "Supplier added successfully";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error adding supplier: {ex.Message}";
+                _logger.LogError(ex, "Error adding a new supplier");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
-        // OfflinePOS.Admin/ViewModels/SupplierViewModel.cs - Update the EditSupplier method
-        private async void EditSupplier(object parameter)
+           private async void EditSupplier(object parameter)
         {
             var supplier = parameter as Supplier ?? SelectedSupplier;
             if (supplier == null)
@@ -207,18 +249,66 @@ namespace OfflinePOS.Admin.ViewModels
             }
         }
 
-        private void DeleteSupplier(object parameter)
+        // OfflinePOS.Admin/ViewModels/SupplierViewModel.cs - Update DeleteSupplier method
+        private async void DeleteSupplier(object parameter)
         {
-            // Implementation for deleting a supplier
-            if (SelectedSupplier == null) return;
+            var supplier = parameter as Supplier ?? SelectedSupplier;
+            if (supplier == null)
+                return;
 
-            var result = MessageBox.Show($"Are you sure you want to delete supplier '{SelectedSupplier.Name}'?",
-                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes)
+            try
             {
-                // Delete logic here
-                MessageBox.Show("Delete Supplier functionality will be implemented soon.");
+                var result = MessageBox.Show(
+                    $"Are you sure you want to delete supplier '{supplier.Name}'?\n\nThis cannot be undone and may affect related products and invoices.",
+                    "Confirm Delete",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    IsBusy = true;
+                    StatusMessage = "Deleting supplier...";
+
+                    var success = await _supplierService.DeleteSupplierAsync(supplier.Id);
+
+                    if (success)
+                    {
+                        await LoadDataAsync();
+                        StatusMessage = $"Supplier '{supplier.Name}' deleted successfully";
+
+                        // Clear selection
+                        SelectedSupplier = null;
+                    }
+                    else
+                    {
+                        StatusMessage = "Failed to delete supplier: Supplier not found";
+                    }
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Handle business rule violations (e.g., supplier in use)
+                StatusMessage = $"Cannot delete supplier: {ex.Message}";
+                MessageBox.Show(
+                    ex.Message,
+                    "Cannot Delete Supplier",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error deleting supplier: {ex.Message}";
+                _logger.LogError(ex, "Error deleting supplier {SupplierId}", supplier.Id);
+
+                MessageBox.Show(
+                    $"An error occurred while deleting the supplier: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -262,12 +352,61 @@ namespace OfflinePOS.Admin.ViewModels
                 _logger.LogError(ex, "Error viewing invoices for supplier {SupplierId}", supplier.Id);
             }
         }
-        private void CreateInvoice(object parameter)
+        // Update to OfflinePOS.Admin/ViewModels/SupplierViewModel.cs - CreateInvoice method
+        private async void CreateInvoice(object parameter)
         {
-            // Implementation for creating a supplier invoice
-            MessageBox.Show("Create Supplier Invoice functionality will be implemented soon.");
-        }
+            var supplier = parameter as Supplier ?? SelectedSupplier;
+            if (supplier == null)
+                return;
 
+            try
+            {
+                IsBusy = true;
+                StatusMessage = "Preparing to create invoice...";
+
+                // Get required services
+                var supplierInvoiceService = _serviceProvider.GetService<ISupplierInvoiceService>();
+                var productService = _serviceProvider.GetService<IProductService>();
+
+                if (supplierInvoiceService == null || productService == null)
+                {
+                    StatusMessage = "Required services are not available";
+                    return;
+                }
+
+                // Create the view model
+                var viewModel = new SupplierInvoiceDialogViewModel(
+                    supplierInvoiceService,
+                    productService,
+                    _serviceProvider.GetService<ILogger<SupplierInvoiceDialogViewModel>>(),
+                    _currentUser,
+                    supplier);
+
+                // Create and show the dialog
+                var dialog = new SupplierInvoiceDialogView(viewModel)
+                {
+                    Owner = Application.Current.MainWindow
+                };
+
+                var result = dialog.ShowDialog();
+
+                // Refresh if dialog was successful
+                if (result == true)
+                {
+                    await LoadDataAsync();
+                    StatusMessage = "Supplier invoice created successfully";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error creating invoice: {ex.Message}";
+                _logger.LogError(ex, "Error creating invoice for supplier {SupplierId}", supplier.Id);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
         private bool CanEditSupplier(object parameter)
         {
             return SelectedSupplier != null;

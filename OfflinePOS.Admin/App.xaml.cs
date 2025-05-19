@@ -145,7 +145,14 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<IStockService>(),
                     provider.GetRequiredService<ILogger<BarcodeManagementViewModel>>(),
                     _currentUser));
-
+            services.AddTransient<Func<Supplier, SupplierInvoiceDialogViewModel>>(provider => (supplier) =>
+    new SupplierInvoiceDialogViewModel(
+        provider.GetRequiredService<ISupplierInvoiceService>(),
+        provider.GetRequiredService<IProductService>(),
+        provider.GetRequiredService<ILogger<SupplierInvoiceDialogViewModel>>(),
+        _currentUser,
+        supplier));
+            services.AddTransient<SupplierInvoiceDialogView>();
             services.AddTransient(provider =>
                 new ProductImportExportViewModel(
                     provider.GetRequiredService<IProductService>(),

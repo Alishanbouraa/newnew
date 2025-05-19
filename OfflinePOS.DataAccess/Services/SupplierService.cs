@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿// OfflinePOS.DataAccess/Services/SupplierService.cs
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.Repositories;
 using OfflinePOS.Core.Services;
@@ -10,7 +12,7 @@ using System.Threading.Tasks;
 namespace OfflinePOS.DataAccess.Services
 {
     /// <summary>
-    /// Service for managing suppliers/vendors
+    /// Service implementation for managing suppliers/vendors
     /// </summary>
     public class SupplierService : ISupplierService
     {
@@ -71,11 +73,27 @@ namespace OfflinePOS.DataAccess.Services
                 if (existing.Any())
                     throw new InvalidOperationException($"A supplier with name '{supplier.Name}' already exists");
 
-                await _unitOfWork.Suppliers.AddAsync(supplier);
+                // Explicitly create a new entity to avoid tracking issues
+                var newSupplier = new Supplier
+                {
+                    Name = supplier.Name,
+                    ContactPerson = supplier.ContactPerson,
+                    PhoneNumber = supplier.PhoneNumber,
+                    Email = supplier.Email,
+                    Address = supplier.Address,
+                    TaxId = supplier.TaxId,
+                    PaymentTerms = supplier.PaymentTerms,
+                    CurrentBalance = supplier.CurrentBalance,
+                    CreatedById = supplier.CreatedById,
+                    CreatedDate = DateTime.Now,
+                    IsActive = true
+                };
+
+                await _unitOfWork.Suppliers.AddAsync(newSupplier);
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("Supplier created: {SupplierName}", supplier.Name);
-                return supplier;
+                _logger.LogInformation("Supplier created: {SupplierName}", newSupplier.Name);
+                return newSupplier;
             }
             catch (Exception ex)
             {
@@ -92,7 +110,7 @@ namespace OfflinePOS.DataAccess.Services
 
             try
             {
-                // Check if supplier exists
+                // Get the entity from the database first
                 var existingSupplier = await _unitOfWork.Suppliers.GetByIdAsync(supplier.Id);
                 if (existingSupplier == null)
                     return false;
@@ -104,7 +122,18 @@ namespace OfflinePOS.DataAccess.Services
                 if (duplicateNameCheck.Any())
                     throw new InvalidOperationException($"Another supplier with name '{supplier.Name}' already exists");
 
-                await _unitOfWork.Suppliers.UpdateAsync(supplier);
+                // Update properties directly on the tracked entity
+                existingSupplier.Name = supplier.Name;
+                existingSupplier.ContactPerson = supplier.ContactPerson;
+                existingSupplier.PhoneNumber = supplier.PhoneNumber;
+                existingSupplier.Email = supplier.Email;
+                existingSupplier.Address = supplier.Address;
+                existingSupplier.TaxId = supplier.TaxId;
+                existingSupplier.PaymentTerms = supplier.PaymentTerms;
+                existingSupplier.LastUpdatedById = supplier.LastUpdatedById;
+                existingSupplier.LastUpdatedDate = DateTime.Now;
+
+                // No need to call Update() since the entity is already tracked
                 await _unitOfWork.SaveChangesAsync();
 
                 _logger.LogInformation("Supplier updated: {SupplierName}", supplier.Name);
@@ -112,7 +141,17 @@ namespace OfflinePOS.DataAccess.Services
             }
             catch (Exception ex)
             {
+                // Log all exceptions
                 _logger.LogError(ex, "Error updating supplier {SupplierId}", supplier.Id);
+
+                // Check for concurrency exception specifically
+                if (ex is DbUpdateConcurrencyException)
+                {
+                    // Rethrow as a more specific exception for the UI to handle
+                    throw new InvalidOperationException("The supplier was modified by another user. Please refresh and try again.", ex);
+                }
+
+                // Rethrow the original exception
                 throw;
             }
         }
@@ -131,9 +170,13 @@ namespace OfflinePOS.DataAccess.Services
                 if (hasProducts)
                     throw new InvalidOperationException("Cannot delete supplier that is used by products");
 
+                // Check if supplier has any invoices
+                var hasInvoices = await _unitOfWork.SupplierInvoices.ExistsAsync(i => i.SupplierId == id && i.IsActive);
+                if (hasInvoices)
+                    throw new InvalidOperationException("Cannot delete supplier that has invoices");
+
                 // Soft delete - set IsActive to false
                 supplier.IsActive = false;
-                await _unitOfWork.Suppliers.UpdateAsync(supplier);
                 await _unitOfWork.SaveChangesAsync();
 
                 _logger.LogInformation("Supplier soft deleted: {SupplierId}", id);
@@ -191,6 +234,5 @@ namespace OfflinePOS.DataAccess.Services
                 throw;
             }
         }
-    
     }
 }
