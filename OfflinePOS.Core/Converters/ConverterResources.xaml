@@ -7,5 +7,8 @@
     <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
     <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
     <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
-
+    <converters:StringMatchToVisibilityConverter x:Key="StringMatchToVisibilityConverter"/>
+    <converters:InverseStringMatchToVisibilityConverter x:Key="InverseStringMatchToVisibilityConverter"/>
+    <converters:StatusToColorConverter x:Key="StatusToColorConverter"/>
+    <converters:BalanceToColorConverter x:Key="BalanceToColorConverter"/>
 </ResourceDictionary>

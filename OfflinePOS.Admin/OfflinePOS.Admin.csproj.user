@@ -11,6 +11,12 @@
     <Compile Update="Views\CategoryView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Views\CustomerDialogView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\CustomerView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Views\LoginView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -23,7 +29,22 @@
     <Compile Update="Views\ProductView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Views\SettleDebtDialogView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Views\StockManagementView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\SupplierDialogView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\SupplierView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\TransactionDetailsDialogView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\TransactionHistoryView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

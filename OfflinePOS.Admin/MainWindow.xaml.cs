@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿// File: OfflinePOS.Admin/MainWindow.xaml.cs
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OfflinePOS.Admin.Diagnostics;
 using OfflinePOS.Admin.Views;
 using OfflinePOS.Core.Models;
 using System;
@@ -63,6 +65,9 @@ namespace OfflinePOS.Admin
             {
                 _logger?.LogInformation($"MainWindow.Loaded event for user: {_currentUser.Username}");
 
+                // Verify XAML elements for debugging purposes
+                MainWindowDiagnostics.VerifyXamlElements(this, _logger);
+
                 // Set user info safely
                 if (UserNameTextBlock != null)
                 {
@@ -88,6 +93,8 @@ namespace OfflinePOS.Admin
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error in MainWindow_Loaded event");
+                MessageBox.Show($"Error loading main window: {ex.Message}",
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -112,6 +119,7 @@ namespace OfflinePOS.Admin
                 if (Application.Current.MainWindow == this)
                 {
                     _logger?.LogInformation("Application shutting down from MainWindow closing");
+                    Application.Current.Shutdown();
                 }
             }
             else
@@ -139,39 +147,46 @@ namespace OfflinePOS.Admin
                     switch (viewName)
                     {
                         case "Dashboard":
+                            // For dashboard, show a welcome message for now
+                            // In a real implementation, this would show a dashboard with KPIs, charts, etc.
                             MainContent.Content = "Welcome to POS Admin System";
                             break;
+
                         case "Products":
                             LoadView<ProductView>();
                             break;
+
                         case "Categories":
-                            // Load CategoryView
                             LoadView<CategoryView>();
                             break;
+
                         case "Suppliers":
-                            // Load SupplierView
-                            MainContent.Content = "Suppliers view not implemented yet";
+                            LoadView<SupplierView>();
                             break;
+
                         case "Customers":
-                            // Load CustomerView
-                            MainContent.Content = "Customers view not implemented yet";
+                            LoadView<CustomerView>();
                             break;
+
                         case "Transactions":
-                            // Load TransactionView
-                            MainContent.Content = "Transactions view not implemented yet";
+                            LoadView<TransactionHistoryView>();
                             break;
+
                         case "Employees":
-                            // Load EmployeeView
-                            MainContent.Content = "Employees view not implemented yet";
+                            // Employees functionality to be implemented
+                            MainContent.Content = "Employees management will be implemented soon.";
                             break;
+
                         case "Reports":
-                            // Load ReportView
-                            MainContent.Content = "Reports view not implemented yet";
+                            // Reports functionality to be implemented
+                            MainContent.Content = "Reports functionality will be implemented soon.";
                             break;
+
                         case "Settings":
-                            // Load SettingsView
-                            MainContent.Content = "Settings view not implemented yet";
+                            // Settings functionality to be implemented
+                            MainContent.Content = "System settings will be implemented soon.";
                             break;
+
                         default:
                             MainContent.Content = $"View for {viewName} not implemented yet.";
                             break;
