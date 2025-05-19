@@ -141,7 +141,14 @@ namespace OfflinePOS.Admin.ViewModels
                 {
                     IsActive = true,
                     CreatedById = _currentUser.Id,
-                    CurrentBalance = 0
+                    CurrentBalance = 0,
+                    Name = string.Empty,
+                    Address = string.Empty,
+                    PhoneNumber = string.Empty,
+                    Email = string.Empty,
+                    ContactPerson = string.Empty,
+                    TaxId = string.Empty,
+                    PaymentTerms = "Net 30" // Default payment terms
                 };
             }
             else
@@ -179,7 +186,6 @@ namespace OfflinePOS.Admin.ViewModels
         /// <summary>
         /// Saves the supplier
         /// </summary>
-        // OfflinePOS.Admin/ViewModels/SupplierDialogViewModel.cs - Update SaveSupplier method
         private async void SaveSupplier(object parameter)
         {
             if (!ValidateSupplier())
@@ -235,6 +241,36 @@ namespace OfflinePOS.Admin.ViewModels
             if (string.IsNullOrWhiteSpace(Supplier.Name))
             {
                 ErrorMessage = "Supplier name is required";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(Supplier.Address))
+            {
+                ErrorMessage = "Address is required";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(Supplier.PhoneNumber))
+            {
+                ErrorMessage = "Phone number is required";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(Supplier.Email))
+            {
+                ErrorMessage = "Email is required";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(Supplier.ContactPerson))
+            {
+                ErrorMessage = "Contact person is required";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(Supplier.TaxId))
+            {
+                ErrorMessage = "Tax ID is required";
                 return false;
             }
 

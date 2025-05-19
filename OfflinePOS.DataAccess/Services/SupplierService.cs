@@ -77,12 +77,12 @@ namespace OfflinePOS.DataAccess.Services
                 var newSupplier = new Supplier
                 {
                     Name = supplier.Name,
-                    ContactPerson = supplier.ContactPerson,
-                    PhoneNumber = supplier.PhoneNumber,
-                    Email = supplier.Email,
-                    Address = supplier.Address,
-                    TaxId = supplier.TaxId,
-                    PaymentTerms = supplier.PaymentTerms,
+                    ContactPerson = supplier.ContactPerson ?? string.Empty,
+                    PhoneNumber = supplier.PhoneNumber ?? string.Empty,
+                    Email = supplier.Email ?? string.Empty,
+                    Address = supplier.Address ?? string.Empty,
+                    TaxId = supplier.TaxId ?? string.Empty,
+                    PaymentTerms = supplier.PaymentTerms ?? "Net 30",
                     CurrentBalance = supplier.CurrentBalance,
                     CreatedById = supplier.CreatedById,
                     CreatedDate = DateTime.Now,
