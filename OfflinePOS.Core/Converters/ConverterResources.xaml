@@ -11,4 +11,5 @@
     <converters:InverseStringMatchToVisibilityConverter x:Key="InverseStringMatchToVisibilityConverter"/>
     <converters:StatusToColorConverter x:Key="StatusToColorConverter"/>
     <converters:BalanceToColorConverter x:Key="BalanceToColorConverter"/>
+    <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
 </ResourceDictionary>

@@ -7,6 +7,7 @@ using OfflinePOS.Core.MVVM;
 using OfflinePOS.Core.Services;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -254,17 +255,58 @@ namespace OfflinePOS.Admin.ViewModels
         /// <summary>
         /// Adds a new invoice for the supplier
         /// </summary>
-        private void AddInvoice(object parameter)
+        private async void AddInvoice(object parameter)
         {
-            // Implementation will be added later
-            MessageBox.Show($"Adding new invoice for {Supplier.Name} is not implemented yet.",
-                "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                IsBusy = true;
+                StatusMessage = "Preparing to add invoice...";
+
+                // Get required services
+                var productService = _serviceProvider.GetService<IProductService>();
+                if (productService == null)
+                {
+                    StatusMessage = "Product service is not available";
+                    return;
+                }
+
+                // Create the view model
+                var viewModel = new SupplierInvoiceDialogViewModel(
+                    _supplierInvoiceService,
+                    productService,
+                    _serviceProvider.GetService<ILogger<SupplierInvoiceDialogViewModel>>(),
+                    _currentUser,
+                    Supplier);
+
+                // Create and show the dialog
+                var dialog = new SupplierInvoiceDialogView(viewModel)
+                {
+                    Owner = Application.Current.MainWindow
+                };
+
+                var result = dialog.ShowDialog();
+
+                // Refresh if dialog was successful
+                if (result == true)
+                {
+                    await LoadInvoicesAsync();
+                    StatusMessage = "Invoice added successfully";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error adding invoice: {ex.Message}";
+                _logger.LogError(ex, "Error adding invoice for supplier {SupplierId}", Supplier.Id);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         /// <summary>
         /// Makes a payment on the selected invoice
         /// </summary>
-        // Update to OfflinePOS.Admin/ViewModels/SupplierInvoiceListViewModel.cs - MakePayment method
         private async void MakePayment(object parameter)
         {
             var invoice = parameter as SupplierInvoice ?? SelectedInvoice;
@@ -309,6 +351,7 @@ namespace OfflinePOS.Admin.ViewModels
                 IsBusy = false;
             }
         }
+
         /// <summary>
         /// Cancels the selected invoice
         /// </summary>

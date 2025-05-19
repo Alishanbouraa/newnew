@@ -390,21 +390,21 @@ namespace OfflinePOS.Admin.ViewModels
                     Products.Add(product);
                 }
 
-                // Select the first product if any found
                 if (Products.Count > 0)
                 {
-                    SelectedProduct = Products[0];
+                    SelectedProduct = Products[0]; // Auto-select first product
+                    StatusMessage = $"Found {Products.Count} products - click an item to select it";
                 }
                 else
                 {
                     SelectedProduct = null;
+                    StatusMessage = "No products found matching your search";
                 }
-
-                StatusMessage = $"Found {Products.Count} products";
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error searching products: {ex.Message}";
+                ErrorMessage = "Failed to search products. Please try again.";
                 _logger.LogError(ex, "Error searching products with term: {SearchTerm}", ProductSearchText);
             }
             finally
@@ -617,6 +617,16 @@ namespace OfflinePOS.Admin.ViewModels
             {
                 ErrorMessage = "Total amount must be greater than zero";
                 return false;
+            }
+
+            // Validate each item has valid quantities
+            foreach (var item in InvoiceItems)
+            {
+                if (item.BoxQuantity <= 0 && item.ItemQuantity <= 0)
+                {
+                    ErrorMessage = $"Item '{item.Product.Name}' must have a quantity greater than zero";
+                    return false;
+                }
             }
 
             return true;

@@ -123,6 +123,29 @@
                 </TextBlock>
             </Grid>
 
+            <!-- Product Search Results Popup -->
+            <Popup IsOpen="{Binding Products.Count, Converter={StaticResource CountToVisibilityConverter}, Mode=OneWay}"
+       PlacementTarget="{Binding ElementName=ProductSearchTextBox}"
+       Placement="Bottom" 
+       Width="{Binding ElementName=ProductSearchTextBox, Path=ActualWidth}"
+       StaysOpen="False"
+       AllowsTransparency="True">
+                <Border Background="White" 
+                        BorderBrush="#CCCCCC" 
+                        BorderThickness="1" 
+                        MaxHeight="200">
+                    <ListView ItemsSource="{Binding Products}" 
+                              SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+                              SelectionMode="Single">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Name}" Padding="5" />
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Border>
+            </Popup>
+
             <!-- Box Quantity -->
             <TextBlock Grid.Column="1" 
                        Text="Box Qty:" 
