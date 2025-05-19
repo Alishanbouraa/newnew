@@ -1,5 +1,4 @@
-﻿// OfflinePOS.Admin/ViewModels/ProductDialogViewModel.cs
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.MVVM;
 using OfflinePOS.Core.Services;
@@ -21,11 +20,15 @@ namespace OfflinePOS.Admin.ViewModels
         private readonly IProductService _productService;
         private readonly ICategoryService _categoryService;
         private readonly ISupplierService _supplierService;
+        private readonly ISupplierInvoiceService _supplierInvoiceService;
         private readonly User _currentUser;
 
         private Product _product;
         private Category _selectedCategory;
         private Supplier _selectedSupplier;
+        private ObservableCollection<SupplierInvoice> _supplierInvoices;
+        private SupplierInvoice _selectedSupplierInvoice;
+        private bool _hasSelectedSupplier;
         private bool _isNewProduct;
         private string _windowTitle;
         private string _errorMessage;
@@ -34,6 +37,7 @@ namespace OfflinePOS.Admin.ViewModels
         private int _initialBoxQuantity;
         private int _initialItemQuantity;
         private string _locationCode = string.Empty;
+
         /// <summary>
         /// Event raised when the dialog should be closed
         /// </summary>
@@ -77,8 +81,49 @@ namespace OfflinePOS.Admin.ViewModels
                     {
                         _product.SupplierId = value?.Id > 0 ? value.Id : null;
                     }
+
+                    // Set the flag that enables/disables the invoice dropdown
+                    HasSelectedSupplier = value != null && value.Id > 0;
+
+                    // Clear and reload supplier invoices when supplier changes
+                    if (HasSelectedSupplier)
+                    {
+                        LoadSupplierInvoices(null);
+                    }
+                    else
+                    {
+                        SupplierInvoices.Clear();
+                        SelectedSupplierInvoice = null;
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Available supplier invoices
+        /// </summary>
+        public ObservableCollection<SupplierInvoice> SupplierInvoices
+        {
+            get => _supplierInvoices;
+            set => SetProperty(ref _supplierInvoices, value);
+        }
+
+        /// <summary>
+        /// Selected supplier invoice
+        /// </summary>
+        public SupplierInvoice SelectedSupplierInvoice
+        {
+            get => _selectedSupplierInvoice;
+            set => SetProperty(ref _selectedSupplierInvoice, value);
+        }
+
+        /// <summary>
+        /// Flag indicating if a supplier is selected
+        /// </summary>
+        public bool HasSelectedSupplier
+        {
+            get => _hasSelectedSupplier;
+            set => SetProperty(ref _hasSelectedSupplier, value);
         }
 
         /// <summary>
@@ -125,6 +170,7 @@ namespace OfflinePOS.Admin.ViewModels
             get => _isBusy;
             set => SetProperty(ref _isBusy, value);
         }
+
         /// <summary>
         /// Location code for initial stock setup
         /// </summary>
@@ -133,6 +179,7 @@ namespace OfflinePOS.Admin.ViewModels
             get => _locationCode;
             set => SetProperty(ref _locationCode, value);
         }
+
         /// <summary>
         /// Initial box quantity for new products
         /// </summary>
@@ -182,11 +229,17 @@ namespace OfflinePOS.Admin.ViewModels
         public ICommand GenerateItemBarcodeCommand { get; }
 
         /// <summary>
+        /// Command for refreshing supplier invoices
+        /// </summary>
+        public ICommand RefreshInvoicesCommand { get; }
+
+        /// <summary>
         /// Initializes a new instance of the ProductDialogViewModel class
         /// </summary>
         /// <param name="productService">Product service</param>
         /// <param name="categoryService">Category service</param>
         /// <param name="supplierService">Supplier service</param>
+        /// <param name="supplierInvoiceService">Supplier invoice service</param>
         /// <param name="logger">Logger</param>
         /// <param name="currentUser">Current user</param>
         /// <param name="product">Product to edit, or null for a new product</param>
@@ -194,6 +247,7 @@ namespace OfflinePOS.Admin.ViewModels
             IProductService productService,
             ICategoryService categoryService,
             ISupplierService supplierService,
+            ISupplierInvoiceService supplierInvoiceService,
             ILogger<ProductDialogViewModel> logger,
             User currentUser,
             Product product = null)
@@ -202,6 +256,7 @@ namespace OfflinePOS.Admin.ViewModels
             _productService = productService ?? throw new ArgumentNullException(nameof(productService));
             _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
             _supplierService = supplierService ?? throw new ArgumentNullException(nameof(supplierService));
+            _supplierInvoiceService = supplierInvoiceService ?? throw new ArgumentNullException(nameof(supplierInvoiceService));
             _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
 
             // Determine if adding or editing
@@ -209,6 +264,9 @@ namespace OfflinePOS.Admin.ViewModels
 
             // Set window title
             WindowTitle = IsNewProduct ? "Add New Product" : "Edit Product";
+
+            // Initialize collections
+            SupplierInvoices = new ObservableCollection<SupplierInvoice>();
 
             // Initialize product
             if (IsNewProduct)
@@ -233,6 +291,7 @@ namespace OfflinePOS.Admin.ViewModels
             CancelCommand = CreateCommand(Cancel);
             GenerateBoxBarcodeCommand = CreateCommand(GenerateBoxBarcode);
             GenerateItemBarcodeCommand = CreateCommand(GenerateItemBarcode);
+            RefreshInvoicesCommand = CreateCommand(LoadSupplierInvoices, CanLoadSupplierInvoices);
         }
 
         /// <summary>
@@ -279,10 +338,24 @@ namespace OfflinePOS.Admin.ViewModels
                 if (Product.SupplierId.HasValue && Product.SupplierId.Value > 0)
                 {
                     SelectedSupplier = Suppliers.FirstOrDefault(s => s.Id == Product.SupplierId.Value);
+                    HasSelectedSupplier = true;
+
+                    // Load supplier invoices if supplier is selected
+                    if (HasSelectedSupplier)
+                    {
+                        await LoadSupplierInvoicesAsync();
+
+                        // Select existing supplier invoice if available
+                        if (Product.SupplierInvoiceId.HasValue)
+                        {
+                            SelectedSupplierInvoice = SupplierInvoices.FirstOrDefault(i => i.Id == Product.SupplierInvoiceId.Value);
+                        }
+                    }
                 }
                 else
                 {
                     SelectedSupplier = Suppliers.First(); // The "None" option
+                    HasSelectedSupplier = false;
                 }
             }
             catch (Exception ex)
@@ -298,6 +371,69 @@ namespace OfflinePOS.Admin.ViewModels
         }
 
         /// <summary>
+        /// Loads supplier invoices for the selected supplier
+        /// </summary>
+        /// <param name="parameter">Command parameter</param>
+        private async void LoadSupplierInvoices(object parameter)
+        {
+            if (!HasSelectedSupplier)
+                return;
+
+            await LoadSupplierInvoicesAsync();
+        }
+
+        /// <summary>
+        /// Asynchronously loads supplier invoices
+        /// </summary>
+        private async Task LoadSupplierInvoicesAsync()
+        {
+            try
+            {
+                IsBusy = true;
+                StatusMessage = "Loading supplier invoices...";
+
+                // Get invoices for the selected supplier
+                var invoices = await _supplierInvoiceService.GetInvoicesBySupplierAsync(SelectedSupplier.Id);
+
+                // Filter to only pending/partially paid invoices
+                var activeInvoices = invoices.Where(i =>
+                    i.Status == "Pending" || i.Status == "PartiallyPaid");
+
+                SupplierInvoices.Clear();
+                foreach (var invoice in activeInvoices)
+                {
+                    SupplierInvoices.Add(invoice);
+                }
+
+                // If editing a product that has a supplier invoice, select it
+                if (Product?.SupplierInvoiceId != null)
+                {
+                    SelectedSupplierInvoice = SupplierInvoices
+                        .FirstOrDefault(i => i.Id == Product.SupplierInvoiceId);
+                }
+
+                StatusMessage = $"Loaded {SupplierInvoices.Count} supplier invoices";
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error loading supplier invoices: {ex.Message}";
+                _logger.LogError(ex, "Error loading supplier invoices for supplier {SupplierId}", SelectedSupplier.Id);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        /// <summary>
+        /// Determines if supplier invoices can be loaded
+        /// </summary>
+        private bool CanLoadSupplierInvoices(object parameter)
+        {
+            return HasSelectedSupplier && !IsBusy;
+        }
+
+        /// <summary>
         /// Saves the product
         /// </summary>
         /// <param name="parameter">Command parameter</param>
@@ -310,19 +446,14 @@ namespace OfflinePOS.Admin.ViewModels
             {
                 IsBusy = true;
 
-                // Update product with selected category and supplier
-                if (SelectedCategory != null)
+                // Add supplier invoice reference if selected
+                if (SelectedSupplierInvoice != null)
                 {
-                    Product.CategoryId = SelectedCategory.Id;
-                }
-
-                if (SelectedSupplier != null && SelectedSupplier.Id > 0)
-                {
-                    Product.SupplierId = SelectedSupplier.Id;
+                    Product.SupplierInvoiceId = SelectedSupplierInvoice.Id;
                 }
                 else
                 {
-                    Product.SupplierId = null;
+                    Product.SupplierInvoiceId = null;
                 }
 
                 if (IsNewProduct)
@@ -349,7 +480,7 @@ namespace OfflinePOS.Admin.ViewModels
                                     "Initial stock",
                                     "INIT-STOCK",
                                     _currentUser.Id,
-                                    LocationCode);  // Pass the location code if your method supports it
+                                    LocationCode);
                             }
                             catch (Exception ex)
                             {
@@ -386,7 +517,6 @@ namespace OfflinePOS.Admin.ViewModels
         /// Validates the product data
         /// </summary>
         /// <returns>True if valid, false otherwise</returns>
-        // File: OfflinePOS.Admin/ViewModels/ProductDialogViewModel.cs
         private bool ValidateProduct()
         {
             // Clear previous error
@@ -493,7 +623,7 @@ namespace OfflinePOS.Admin.ViewModels
                 Id = source.Id,
                 CategoryId = source.CategoryId,
                 Name = source.Name,
-                Description = source.Description,  // Can be null now
+                Description = source.Description,
                 BoxBarcode = source.BoxBarcode,
                 ItemBarcode = source.ItemBarcode,
                 ItemsPerBox = source.ItemsPerBox,
@@ -504,12 +634,13 @@ namespace OfflinePOS.Admin.ViewModels
                 ItemWholesalePrice = source.ItemWholesalePrice,
                 ItemSalePrice = source.ItemSalePrice,
                 SupplierId = source.SupplierId,
+                SupplierInvoiceId = source.SupplierInvoiceId,
                 SupplierProductCode = source.SupplierProductCode,
                 MSRP = source.MSRP,
                 TrackInventory = source.TrackInventory,
                 AllowNegativeInventory = source.AllowNegativeInventory,
                 Weight = source.Weight,
-                Dimensions = source.Dimensions,  // Can be null now
+                Dimensions = source.Dimensions,
                 CreatedById = source.CreatedById,
                 CreatedDate = source.CreatedDate,
                 IsActive = source.IsActive

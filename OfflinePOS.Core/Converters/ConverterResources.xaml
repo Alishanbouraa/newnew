@@ -12,4 +12,7 @@
     <converters:StatusToColorConverter x:Key="StatusToColorConverter"/>
     <converters:BalanceToColorConverter x:Key="BalanceToColorConverter"/>
     <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
+    <converters:ObjectToVisibilityConverter x:Key="ObjectToVisibilityConverter"/>
+    <converters:InverseObjectToVisibilityConverter x:Key="InverseObjectToVisibilityConverter"/>
+
 </ResourceDictionary>

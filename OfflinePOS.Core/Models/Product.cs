@@ -1,5 +1,4 @@
-﻿// OfflinePOS.Core/Models/Product.cs
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace OfflinePOS.Core.Models
@@ -75,10 +74,16 @@ namespace OfflinePOS.Core.Models
         /// Sale price for an individual item
         /// </summary>
         public decimal ItemSalePrice { get; set; }
+
         /// <summary>
         /// Vendor/supplier ID for the product
         /// </summary>
         public int? SupplierId { get; set; }
+
+        /// <summary>
+        /// Reference to a supplier invoice (if this product was from an invoice)
+        /// </summary>
+        public int? SupplierInvoiceId { get; set; }
 
         /// <summary>
         /// Vendor/supplier product code
@@ -116,6 +121,7 @@ namespace OfflinePOS.Core.Models
         // Navigation properties
         public virtual Stock Stock { get; set; }
         public virtual Supplier Supplier { get; set; }
+        public virtual SupplierInvoice SupplierInvoice { get; set; }
         public virtual ICollection<StockAdjustment> StockAdjustments { get; set; } = new List<StockAdjustment>();
         public virtual Category Category { get; set; }
     }

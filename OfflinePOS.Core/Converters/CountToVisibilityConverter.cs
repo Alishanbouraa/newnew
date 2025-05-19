@@ -1,5 +1,4 @@
-﻿// OfflinePOS.Core/Converters/CountToVisibilityConverter.cs
-using System;
+﻿using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
@@ -7,19 +6,20 @@ using System.Windows.Data;
 namespace OfflinePOS.Core.Converters
 {
     /// <summary>
-    /// Converts a collection count to visibility
+    /// Converts a count (int) to Visibility (Visible if greater than 0, Collapsed otherwise)
     /// </summary>
     public class CountToVisibilityConverter : IValueConverter
     {
         /// <summary>
-        /// Converts a count to Visibility
+        /// Converts count to Visibility
         /// </summary>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is int count)
+            if (value is int intValue)
             {
-                return count > 0 ? Visibility.Visible : Visibility.Collapsed;
+                return intValue > 0 ? Visibility.Visible : Visibility.Collapsed;
             }
+
             return Visibility.Collapsed;
         }
 

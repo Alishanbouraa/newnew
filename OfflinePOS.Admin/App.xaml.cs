@@ -145,14 +145,17 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<IStockService>(),
                     provider.GetRequiredService<ILogger<BarcodeManagementViewModel>>(),
                     _currentUser));
+
             services.AddTransient<Func<Supplier, SupplierInvoiceDialogViewModel>>(provider => (supplier) =>
-    new SupplierInvoiceDialogViewModel(
-        provider.GetRequiredService<ISupplierInvoiceService>(),
-        provider.GetRequiredService<IProductService>(),
-        provider.GetRequiredService<ILogger<SupplierInvoiceDialogViewModel>>(),
-        _currentUser,
-        supplier));
+                new SupplierInvoiceDialogViewModel(
+                    provider.GetRequiredService<ISupplierInvoiceService>(),
+                    provider.GetRequiredService<ISupplierService>(),
+                    provider.GetRequiredService<ILogger<SupplierInvoiceDialogViewModel>>(),
+                    _currentUser,
+                    supplier));
+
             services.AddTransient<SupplierInvoiceDialogView>();
+
             services.AddTransient(provider =>
                 new ProductImportExportViewModel(
                     provider.GetRequiredService<IProductService>(),
@@ -191,6 +194,7 @@ namespace OfflinePOS.Admin
                 new SupplierInvoiceListViewModel(
                     provider.GetRequiredService<ISupplierInvoiceService>(),
                     provider.GetRequiredService<ISupplierService>(),
+                    provider.GetRequiredService<IProductService>(),
                     provider.GetRequiredService<ILogger<SupplierInvoiceListViewModel>>(),
                     _currentUser,
                     provider,
@@ -226,6 +230,7 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<IProductService>(),
                     provider.GetRequiredService<ICategoryService>(),
                     provider.GetRequiredService<ISupplierService>(),
+                    provider.GetRequiredService<ISupplierInvoiceService>(),
                     provider.GetRequiredService<ILogger<ProductDialogViewModel>>(),
                     _currentUser,
                     product));
@@ -260,6 +265,15 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<ILogger<TransactionDetailsViewModel>>(),
                     transaction));
 
+            // Register ViewModel factory for Supplier Payment
+            services.AddTransient<Func<Supplier, SupplierInvoice, SupplierPaymentViewModel>>(provider => (supplier, invoice) =>
+                new SupplierPaymentViewModel(
+                    provider.GetRequiredService<ISupplierInvoiceService>(),
+                    provider.GetRequiredService<ILogger<SupplierPaymentViewModel>>(),
+                    _currentUser,
+                    supplier,
+                    invoice));
+
             // Register inventory views
             services.AddTransient<StockManagementView>();
             services.AddTransient<BarcodeManagementView>();
@@ -275,6 +289,7 @@ namespace OfflinePOS.Admin
             services.AddTransient<SupplierView>();
             services.AddTransient<SupplierDialogView>();
             services.AddTransient<SupplierInvoiceListView>();
+            services.AddTransient<SupplierPaymentDialogView>();
 
             // Register customer views
             services.AddTransient<CustomerView>();

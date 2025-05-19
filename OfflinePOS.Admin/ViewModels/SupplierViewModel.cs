@@ -312,7 +312,8 @@ namespace OfflinePOS.Admin.ViewModels
             }
         }
 
-        // OfflinePOS.Admin/ViewModels/SupplierViewModel.cs - Update the ViewInvoices method
+        // File: OfflinePOS.Admin/ViewModels/SupplierViewModel.cs
+
         private void ViewInvoices(object parameter)
         {
             var supplier = parameter as Supplier ?? SelectedSupplier;
@@ -333,10 +334,11 @@ namespace OfflinePOS.Admin.ViewModels
                 var viewModel = new SupplierInvoiceListViewModel(
                     supplierInvoiceService,
                     _supplierService,
+                    _serviceProvider.GetService<IProductService>(), // Add IProductService parameter
                     _serviceProvider.GetService<ILogger<SupplierInvoiceListViewModel>>(),
                     _currentUser,
                     _serviceProvider,
-                    supplier);
+                    supplier);  // Pass the supplier parameter
 
                 // Create and show the dialog
                 var dialog = new SupplierInvoiceListView(viewModel)
@@ -352,7 +354,7 @@ namespace OfflinePOS.Admin.ViewModels
                 _logger.LogError(ex, "Error viewing invoices for supplier {SupplierId}", supplier.Id);
             }
         }
-        // Update to OfflinePOS.Admin/ViewModels/SupplierViewModel.cs - CreateInvoice method
+
         private async void CreateInvoice(object parameter)
         {
             var supplier = parameter as Supplier ?? SelectedSupplier;
@@ -377,7 +379,7 @@ namespace OfflinePOS.Admin.ViewModels
                 // Create the view model
                 var viewModel = new SupplierInvoiceDialogViewModel(
                     supplierInvoiceService,
-                    productService,
+                    _supplierService,  // This should be ISupplierService
                     _serviceProvider.GetService<ILogger<SupplierInvoiceDialogViewModel>>(),
                     _currentUser,
                     supplier);

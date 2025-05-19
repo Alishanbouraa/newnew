@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using OfflinePOS.Admin.Views;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.Services;
@@ -237,17 +238,31 @@ namespace OfflinePOS.Admin.ViewModels
         /// Opens the Add Product dialog
         /// </summary>
         /// <param name="parameter">Command parameter</param>
-        private void AddProduct(object parameter)
+        private async void AddProduct(object parameter)
         {
             try
             {
-                // Create the dialog view model
+                IsBusy = true;
+                StatusMessage = "Preparing to add product...";
+
+                // Create a new supplier object
+                var supplier = new Supplier
+                {
+                    IsActive = true,
+                    CreatedById = _currentUser.Id,
+                    CreatedDate = DateTime.Now,
+                    CurrentBalance = 0
+                };
+
+                // Create dialog view model
                 var dialogViewModel = new ProductDialogViewModel(
                     _productService,
                     _categoryService,
                     _supplierService,
-                    (ILogger<ProductDialogViewModel>)_serviceProvider.GetService(typeof(ILogger<ProductDialogViewModel>)), // Get typed logger from service provider
-                    _currentUser);
+                    _serviceProvider.GetService<ISupplierInvoiceService>(), // Add ISupplierInvoiceService
+                    (ILogger<ProductDialogViewModel>)_serviceProvider.GetService(typeof(ILogger<ProductDialogViewModel>)),
+                    _currentUser,
+                    null);  // Null indicates a new product
 
                 // Create and show the dialog
                 var dialog = new ProductDialogView(dialogViewModel)
@@ -257,17 +272,21 @@ namespace OfflinePOS.Admin.ViewModels
 
                 var result = dialog.ShowDialog();
 
-                // Refresh products if dialog was successful
+                // Refresh suppliers if dialog was successful
                 if (result == true)
                 {
-                    SearchProducts(null);
+                    await LoadDataAsync();
                     StatusMessage = "Product added successfully";
                 }
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error adding product: {ex.Message}";
-                _logger.LogError(ex, "Error adding product");
+                _logger.LogError(ex, "Error adding a new product");
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -283,6 +302,9 @@ namespace OfflinePOS.Admin.ViewModels
 
             try
             {
+                IsBusy = true;
+                StatusMessage = "Loading product details...";
+
                 // Get the complete product with navigation properties
                 var completeProduct = await _productService.GetProductByIdAsync(product.Id);
                 if (completeProduct == null)
@@ -293,12 +315,13 @@ namespace OfflinePOS.Admin.ViewModels
 
                 // Create the dialog view model
                 var dialogViewModel = new ProductDialogViewModel(
-         _productService,
-         _categoryService,
-         _supplierService,
-         (ILogger<ProductDialogViewModel>)_serviceProvider.GetService(typeof(ILogger<ProductDialogViewModel>)), // Get typed logger from service provider
-         _currentUser,
-         completeProduct);
+                    _productService,
+                    _categoryService,
+                    _supplierService,
+                    _serviceProvider.GetService<ISupplierInvoiceService>(), // Add ISupplierInvoiceService
+                    (ILogger<ProductDialogViewModel>)_serviceProvider.GetService(typeof(ILogger<ProductDialogViewModel>)),
+                    _currentUser,
+                    completeProduct);
 
                 // Create and show the dialog
                 var dialog = new ProductDialogView(dialogViewModel)
@@ -320,7 +343,12 @@ namespace OfflinePOS.Admin.ViewModels
                 StatusMessage = $"Error editing product: {ex.Message}";
                 _logger.LogError(ex, "Error editing product {ProductId}", product.Id);
             }
+            finally
+            {
+                IsBusy = false;
+            }
         }
+
 
         /// <summary>
         /// Deletes the selected product after confirmation

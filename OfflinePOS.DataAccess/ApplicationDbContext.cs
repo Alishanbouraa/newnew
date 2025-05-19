@@ -403,6 +403,22 @@ namespace OfflinePOS.DataAccess
                 .HasForeignKey(p => p.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Configure Product-Supplier relationship
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Supplier)
+                .WithMany()
+                .HasForeignKey(p => p.SupplierId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure Product-SupplierInvoice relationship
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.SupplierInvoice)
+                .WithMany()
+                .HasForeignKey(p => p.SupplierInvoiceId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<Transaction>()
                 .HasOne(t => t.User)
                 .WithMany()
@@ -464,14 +480,6 @@ namespace OfflinePOS.DataAccess
                 .WithMany(p => p.StockAdjustments)
                 .HasForeignKey(sa => sa.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            // Configure Product-Supplier relationship
-            modelBuilder.Entity<Product>()
-                .HasOne(p => p.Supplier)
-                .WithMany()
-                .HasForeignKey(p => p.SupplierId)
-                .IsRequired(false)
-                .OnDelete(DeleteBehavior.SetNull);
 
             // Configure relationships for supplier invoices
             modelBuilder.Entity<SupplierInvoice>()

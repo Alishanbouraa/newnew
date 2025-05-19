@@ -149,6 +149,23 @@
                               DisplayMemberPath="Name"
                               Style="{StaticResource FieldStyle}"/>
 
+                    <!-- Supplier Invoice -->
+                    <TextBlock Text="Supplier Invoice" Style="{StaticResource FieldLabelStyle}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ComboBox Grid.Column="0" ItemsSource="{Binding SupplierInvoices}" 
+                                  SelectedItem="{Binding SelectedSupplierInvoice}"
+                                  DisplayMemberPath="InvoiceNumber"
+                                  Style="{StaticResource FieldStyle}" Margin="0,0,5,15"
+                                  IsEnabled="{Binding HasSelectedSupplier}"/>
+                        <Button Grid.Column="1" Content="Refresh" Padding="10,0"
+                                Command="{Binding RefreshInvoicesCommand}"
+                                IsEnabled="{Binding HasSelectedSupplier}"/>
+                    </Grid>
+
                     <!-- Supplier Product Code -->
                     <TextBlock Text="Supplier Product Code" Style="{StaticResource FieldLabelStyle}"/>
                     <TextBox Text="{Binding Product.SupplierProductCode, UpdateSourceTrigger=PropertyChanged}" 

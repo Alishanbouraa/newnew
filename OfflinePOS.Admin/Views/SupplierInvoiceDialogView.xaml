@@ -1,5 +1,4 @@
-﻿<!-- OfflinePOS.Admin/Views/SupplierInvoiceDialogView.xaml -->
-<Window x:Class="OfflinePOS.Admin.Views.SupplierInvoiceDialogView"
+﻿<Window x:Class="OfflinePOS.Admin.Views.SupplierInvoiceDialogView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,17 +6,14 @@
         xmlns:local="clr-namespace:OfflinePOS.Admin.Views"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}" 
-        Height="700" Width="900"
+        Height="350" Width="500"
         WindowStartupLocation="CenterOwner"
         Loaded="Window_Loaded">
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
@@ -28,292 +24,106 @@
                    FontWeight="Bold" 
                    Margin="0,0,0,20"/>
 
-        <!-- Supplier Info Section -->
-        <Grid Grid.Row="1" Margin="0,0,0,20">
+        <!-- Form Content -->
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="120"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Supplier Name (read-only) -->
+            <!-- Supplier (if not already selected) -->
             <TextBlock Grid.Row="0" Grid.Column="0" 
                        Text="Supplier:" 
-                       FontWeight="Bold" 
                        VerticalAlignment="Center" 
-                       Margin="0,0,10,0"/>
+                       Margin="0,10"
+                       Visibility="{Binding IsSupplierSelectable, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <ComboBox Grid.Row="0" Grid.Column="1" 
+                      ItemsSource="{Binding Suppliers}" 
+                      SelectedItem="{Binding SelectedSupplier}"
+                      DisplayMemberPath="Name"
+                      Margin="0,10"
+                      Visibility="{Binding IsSupplierSelectable, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+            <!-- Supplier Display (if already selected) -->
+            <TextBlock Grid.Row="0" Grid.Column="0" 
+                       Text="Supplier:" 
+                       VerticalAlignment="Center" 
+                       Margin="0,10"
+                       Visibility="{Binding IsSupplierSelectable, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
             <TextBlock Grid.Row="0" Grid.Column="1" 
                        Text="{Binding Supplier.Name}" 
-                       VerticalAlignment="Center"/>
+                       VerticalAlignment="Center" 
+                       Margin="0,10"
+                       Visibility="{Binding IsSupplierSelectable, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
 
             <!-- Invoice Number -->
-            <TextBlock Grid.Row="0" Grid.Column="2" 
+            <TextBlock Grid.Row="1" Grid.Column="0" 
                        Text="Invoice Number:" 
-                       FontWeight="Bold" 
                        VerticalAlignment="Center" 
-                       Margin="20,0,10,0"/>
-            <TextBox Grid.Row="0" Grid.Column="3" 
+                       Margin="0,10"/>
+            <TextBox Grid.Row="1" Grid.Column="1" 
                      Text="{Binding InvoiceNumber, UpdateSourceTrigger=PropertyChanged}" 
-                     Padding="5" 
-                     VerticalAlignment="Center"/>
+                     Margin="0,10"/>
 
             <!-- Invoice Date -->
-            <TextBlock Grid.Row="1" Grid.Column="0" 
+            <TextBlock Grid.Row="2" Grid.Column="0" 
                        Text="Invoice Date:" 
-                       FontWeight="Bold" 
                        VerticalAlignment="Center" 
-                       Margin="0,10,10,0"/>
-            <DatePicker Grid.Row="1" Grid.Column="1" 
+                       Margin="0,10"/>
+            <DatePicker Grid.Row="2" Grid.Column="1" 
                         SelectedDate="{Binding InvoiceDate}" 
-                        VerticalAlignment="Center" 
-                        Margin="0,10,0,0"/>
+                        Margin="0,10"/>
 
             <!-- Due Date -->
-            <TextBlock Grid.Row="1" Grid.Column="2" 
+            <TextBlock Grid.Row="3" Grid.Column="0" 
                        Text="Due Date:" 
-                       FontWeight="Bold" 
                        VerticalAlignment="Center" 
-                       Margin="20,10,10,0"/>
-            <DatePicker Grid.Row="1" Grid.Column="3" 
+                       Margin="0,10"/>
+            <DatePicker Grid.Row="3" Grid.Column="1" 
                         SelectedDate="{Binding DueDate}" 
-                        VerticalAlignment="Center" 
-                        Margin="0,10,0,0"/>
-        </Grid>
+                        Margin="0,10"/>
 
-        <!-- Product Selection Section -->
-        <Grid Grid.Row="2" Margin="0,0,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Product Search with Placeholder -->
-            <Grid Grid.Column="0" Margin="0,0,10,0">
-                <TextBox x:Name="ProductSearchTextBox"
-                         Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}" 
-                         Padding="5" 
-                         KeyDown="ProductSearchTextBox_KeyDown" 
-                         VerticalAlignment="Center"/>
-                <TextBlock IsHitTestVisible="False" 
-                           Text="Search product..." 
-                           VerticalAlignment="Center" 
-                           HorizontalAlignment="Left"
-                           Margin="6,0,0,0"
-                           Foreground="DarkGray">
-                    <TextBlock.Style>
-                        <Style TargetType="{x:Type TextBlock}">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Text, ElementName=ProductSearchTextBox}" Value="">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </Grid>
-
-            <!-- Product Search Results Popup -->
-            <Popup IsOpen="{Binding Products.Count, Converter={StaticResource CountToVisibilityConverter}, Mode=OneWay}"
-       PlacementTarget="{Binding ElementName=ProductSearchTextBox}"
-       Placement="Bottom" 
-       Width="{Binding ElementName=ProductSearchTextBox, Path=ActualWidth}"
-       StaysOpen="False"
-       AllowsTransparency="True">
-                <Border Background="White" 
-                        BorderBrush="#CCCCCC" 
-                        BorderThickness="1" 
-                        MaxHeight="200">
-                    <ListView ItemsSource="{Binding Products}" 
-                              SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
-                              SelectionMode="Single">
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Name}" Padding="5" />
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                </Border>
-            </Popup>
-
-            <!-- Box Quantity -->
-            <TextBlock Grid.Column="1" 
-                       Text="Box Qty:" 
+            <!-- Total Amount -->
+            <TextBlock Grid.Row="4" Grid.Column="0" 
+                       Text="Total Amount:" 
                        VerticalAlignment="Center" 
-                       Margin="0,0,5,0"/>
-            <TextBox Grid.Column="2" 
-                     Text="{Binding BoxQuantity, UpdateSourceTrigger=PropertyChanged}" 
-                     Width="50" 
-                     Padding="5" 
-                     Margin="0,0,10,0" 
-                     VerticalAlignment="Center"/>
+                       Margin="0,10"/>
+            <TextBox Grid.Row="4" Grid.Column="1" 
+                     Text="{Binding TotalAmount, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                     Margin="0,10"/>
 
-            <!-- Item Quantity -->
-            <TextBlock Grid.Column="3" 
-                       Text="Item Qty:" 
-                       VerticalAlignment="Center" 
-                       Margin="0,0,5,0"/>
-            <TextBox Grid.Column="4" 
-                     Text="{Binding ItemQuantity, UpdateSourceTrigger=PropertyChanged}" 
-                     Width="50" 
-                     Padding="5" 
-                     Margin="0,0,10,0" 
-                     VerticalAlignment="Center"/>
-
-            <!-- Add Button -->
-            <Button Grid.Column="5" 
-                    Content="Add Item" 
-                    Command="{Binding AddItemCommand}" 
-                    Padding="10,5" 
-                    Margin="0,0,10,0" 
-                    Background="#4CAF50" 
-                    Foreground="White" 
-                    VerticalAlignment="Center"/>
-
-            <!-- Clear Button -->
-            <Button Grid.Column="6" 
-                    Content="Clear" 
-                    Command="{Binding ClearSelectionCommand}" 
-                    Padding="10,5" 
-                    Background="#9E9E9E" 
-                    Foreground="White" 
-                    VerticalAlignment="Center"/>
-        </Grid>
-
-        <!-- Invoice Items DataGrid -->
-        <Grid Grid.Row="3">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <!-- Header -->
-            <TextBlock Grid.Row="0" 
-                       Text="Invoice Items" 
-                       FontWeight="Bold" 
-                       Margin="0,0,0,5"/>
-
-            <!-- DataGrid -->
-            <DataGrid Grid.Row="1" 
-                      ItemsSource="{Binding InvoiceItems}" 
-                      SelectedItem="{Binding SelectedInvoiceItem}" 
-                      AutoGenerateColumns="False" 
-                      SelectionMode="Single" 
-                      BorderThickness="1" 
-                      BorderBrush="#CCCCCC" 
-                      AlternatingRowBackground="#F5F5F5">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Product" 
-                                        Binding="{Binding Product.Name}" 
-                                        Width="*"/>
-                    <DataGridTextColumn Header="Box Qty" 
-                                        Binding="{Binding BoxQuantity}" 
-                                        Width="80"/>
-                    <DataGridTextColumn Header="Item Qty" 
-                                        Binding="{Binding ItemQuantity}" 
-                                        Width="80"/>
-                    <DataGridTextColumn Header="Box Price" 
-                                        Binding="{Binding BoxPurchasePrice, StringFormat=C2}" 
-                                        Width="100"/>
-                    <DataGridTextColumn Header="Item Price" 
-                                        Binding="{Binding ItemPurchasePrice, StringFormat=C2}" 
-                                        Width="100"/>
-                    <DataGridTextColumn Header="Total" 
-                                        Binding="{Binding TotalAmount, StringFormat=C2}" 
-                                        Width="100"/>
-                    <DataGridTemplateColumn Header="Actions" Width="100">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Content="Edit" 
-                                            Command="{Binding DataContext.EditItemCommand, 
-                                                    RelativeSource={RelativeSource AncestorType=DataGrid}}" 
-                                            CommandParameter="{Binding}" 
-                                            Margin="5,0" 
-                                            Padding="5,2" 
-                                            Background="#2196F3" 
-                                            Foreground="White"/>
-                                    <Button Content="X" 
-                                            Command="{Binding DataContext.RemoveItemCommand, 
-                                                    RelativeSource={RelativeSource AncestorType=DataGrid}}" 
-                                            CommandParameter="{Binding}" 
-                                            Margin="5,0" 
-                                            Padding="5,2" 
-                                            Background="#F44336" 
-                                            Foreground="White"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
-        </Grid>
-
-        <!-- Totals Section -->
-        <Grid Grid.Row="4" Margin="0,10,0,20">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <!-- Notes TextBox -->
-            <TextBlock Grid.Row="0" Grid.Column="0" 
+            <!-- Notes -->
+            <TextBlock Grid.Row="5" Grid.Column="0" 
                        Text="Notes:" 
-                       FontWeight="Bold" 
                        VerticalAlignment="Top" 
-                       Margin="0,3,0,5"/>
-            <TextBox Grid.Row="1" Grid.Column="0" 
+                       Margin="0,10"/>
+            <TextBox Grid.Row="5" Grid.Column="1" 
                      Text="{Binding Notes}" 
                      TextWrapping="Wrap" 
                      AcceptsReturn="True" 
                      Height="60" 
-                     Margin="0,0,20,0"/>
+                     Margin="0,10"/>
 
             <!-- Error Message -->
-            <TextBlock Grid.Row="2" Grid.Column="0" 
+            <TextBlock Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" 
                        Text="{Binding ErrorMessage}" 
                        Foreground="Red" 
-                       TextWrapping="Wrap" 
-                       Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibilityConverter}}" 
-                       Margin="0,5,0,0"/>
-
-            <!-- Total Labels -->
-            <StackPanel Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" 
-                        VerticalAlignment="Center" 
-                        Margin="0,0,10,0">
-                <TextBlock Text="Total Items:" FontWeight="Bold" Margin="0,5"/>
-                <TextBlock Text="Total Amount:" FontWeight="Bold" Margin="0,5"/>
-            </StackPanel>
-
-            <!-- Total Values -->
-            <StackPanel Grid.Row="0" Grid.Column="2" Grid.RowSpan="3" 
-                        VerticalAlignment="Center">
-                <TextBlock Text="{Binding TotalItems}" Margin="0,5"/>
-                <TextBlock Text="{Binding TotalAmount, StringFormat=C2}" 
-                           FontWeight="Bold" 
-                           Foreground="#2196F3" 
-                           Margin="0,5"/>
-            </StackPanel>
+                       TextWrapping="Wrap"
+                       Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibilityConverter}}"
+                       Margin="0,10"/>
         </Grid>
 
         <!-- Buttons -->
-        <Grid Grid.Row="5">
+        <Grid Grid.Row="2" Margin="0,20,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -321,10 +131,9 @@
             </Grid.ColumnDefinitions>
 
             <Button Grid.Column="1" 
-                    Content="Save Invoice" 
+                    Content="Save" 
                     Command="{Binding SaveInvoiceCommand}" 
-                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}" 
-                    Width="120" 
+                    Width="100" 
                     Margin="0,0,10,0" 
                     Padding="10,5" 
                     Background="#2196F3" 
@@ -333,15 +142,14 @@
             <Button Grid.Column="2" 
                     Content="Cancel" 
                     Command="{Binding CancelCommand}" 
-                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}" 
                     Width="100" 
                     Padding="10,5" 
                     Background="#9E9E9E" 
-                    Foreground="White"/>
+                    Foreground="White" />
         </Grid>
 
         <!-- Busy Indicator -->
-        <Border Grid.Row="0" Grid.RowSpan="6" 
+        <Border Grid.Row="0" Grid.RowSpan="3" 
                 Background="#80000000" 
                 Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">

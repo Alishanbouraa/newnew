@@ -1,5 +1,4 @@
-﻿// OfflinePOS.Admin/ViewModels/SupplierInvoiceListViewModel.cs
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Admin.Views;
 using OfflinePOS.Core.Models;
@@ -21,12 +20,15 @@ namespace OfflinePOS.Admin.ViewModels
     {
         private readonly ISupplierInvoiceService _supplierInvoiceService;
         private readonly ISupplierService _supplierService;
+        private readonly IProductService _productService;
         private readonly User _currentUser;
         private readonly IServiceProvider _serviceProvider;
 
         private Supplier _supplier;
         private ObservableCollection<SupplierInvoice> _invoices;
         private SupplierInvoice _selectedInvoice;
+        private ObservableCollection<Product> _invoiceProducts;
+        private decimal _totalProductsValue;
         private DateTime _dateFrom;
         private DateTime _dateTo;
         private bool _isBusy;
@@ -58,7 +60,39 @@ namespace OfflinePOS.Admin.ViewModels
         public SupplierInvoice SelectedInvoice
         {
             get => _selectedInvoice;
-            set => SetProperty(ref _selectedInvoice, value);
+            set
+            {
+                if (SetProperty(ref _selectedInvoice, value))
+                {
+                    // Clear products when selection changes
+                    InvoiceProducts.Clear();
+                    TotalProductsValue = 0;
+
+                    // Load products for the selected invoice
+                    if (value != null)
+                    {
+                        LoadInvoiceProducts(value.Id);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Products associated with the selected invoice
+        /// </summary>
+        public ObservableCollection<Product> InvoiceProducts
+        {
+            get => _invoiceProducts;
+            set => SetProperty(ref _invoiceProducts, value);
+        }
+
+        /// <summary>
+        /// Total value of products in the invoice
+        /// </summary>
+        public decimal TotalProductsValue
+        {
+            get => _totalProductsValue;
+            set => SetProperty(ref _totalProductsValue, value);
         }
 
         /// <summary>
@@ -161,6 +195,7 @@ namespace OfflinePOS.Admin.ViewModels
         public SupplierInvoiceListViewModel(
             ISupplierInvoiceService supplierInvoiceService,
             ISupplierService supplierService,
+            IProductService productService,
             ILogger<SupplierInvoiceListViewModel> logger,
             User currentUser,
             IServiceProvider serviceProvider,
@@ -169,12 +204,14 @@ namespace OfflinePOS.Admin.ViewModels
         {
             _supplierInvoiceService = supplierInvoiceService ?? throw new ArgumentNullException(nameof(supplierInvoiceService));
             _supplierService = supplierService ?? throw new ArgumentNullException(nameof(supplierService));
+            _productService = productService ?? throw new ArgumentNullException(nameof(productService));
             _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             Supplier = supplier ?? throw new ArgumentNullException(nameof(supplier));
 
             // Initialize collections
             Invoices = new ObservableCollection<SupplierInvoice>();
+            InvoiceProducts = new ObservableCollection<Product>();
 
             // Set default date range to last 3 months
             DateTo = DateTime.Today;
@@ -235,6 +272,44 @@ namespace OfflinePOS.Admin.ViewModels
         }
 
         /// <summary>
+        /// Loads products associated with an invoice
+        /// </summary>
+        /// <param name="invoiceId">Invoice ID</param>
+        private async void LoadInvoiceProducts(int invoiceId)
+        {
+            try
+            {
+                IsBusy = true;
+                StatusMessage = "Loading products for invoice...";
+
+                // Get products linked to this invoice
+                var products = await _productService.GetProductsBySupplierInvoiceAsync(invoiceId);
+
+                InvoiceProducts.Clear();
+                TotalProductsValue = 0;
+
+                foreach (var product in products)
+                {
+                    InvoiceProducts.Add(product);
+
+                    // Sum up product purchase prices (box prices only for simplicity)
+                    TotalProductsValue += product.BoxPurchasePrice;
+                }
+
+                StatusMessage = $"Loaded {InvoiceProducts.Count} products for invoice";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error loading products: {ex.Message}";
+                _logger.LogError(ex, "Error loading products for invoice {InvoiceId}", invoiceId);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        /// <summary>
         /// Searches for invoices based on date range
         /// </summary>
         private async void SearchInvoices(object parameter)
@@ -263,17 +338,17 @@ namespace OfflinePOS.Admin.ViewModels
                 StatusMessage = "Preparing to add invoice...";
 
                 // Get required services
-                var productService = _serviceProvider.GetService<IProductService>();
-                if (productService == null)
+                var supplierInvoiceService = _serviceProvider.GetService<ISupplierInvoiceService>();
+                if (supplierInvoiceService == null)
                 {
-                    StatusMessage = "Product service is not available";
+                    StatusMessage = "Supplier invoice service is not available";
                     return;
                 }
 
                 // Create the view model
                 var viewModel = new SupplierInvoiceDialogViewModel(
-                    _supplierInvoiceService,
-                    productService,
+                    supplierInvoiceService,
+                    _supplierService,
                     _serviceProvider.GetService<ILogger<SupplierInvoiceDialogViewModel>>(),
                     _currentUser,
                     Supplier);

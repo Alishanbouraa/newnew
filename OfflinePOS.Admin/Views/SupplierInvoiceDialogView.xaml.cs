@@ -1,8 +1,6 @@
-﻿// OfflinePOS.Admin/Views/SupplierInvoiceDialogView.xaml.cs
-using OfflinePOS.Admin.ViewModels;
+﻿using OfflinePOS.Admin.ViewModels;
 using System;
 using System.Windows;
-using System.Windows.Input;
 
 namespace OfflinePOS.Admin.Views
 {
@@ -41,18 +39,6 @@ namespace OfflinePOS.Admin.Views
             {
                 MessageBox.Show($"Error loading data: {ex.Message}",
                     "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        /// <summary>
-        /// Handles the product search text box key down event
-        /// </summary>
-        private void ProductSearchTextBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter && _viewModel != null)
-            {
-                _viewModel.SearchProductsCommand.Execute(null);
-                e.Handled = true;
             }
         }
 

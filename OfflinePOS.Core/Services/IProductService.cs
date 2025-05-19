@@ -65,6 +65,13 @@ namespace OfflinePOS.Core.Services
         Task<IEnumerable<Product>> GetProductsBySupplierAsync(int supplierId);
 
         /// <summary>
+        /// Gets products associated with a supplier invoice
+        /// </summary>
+        /// <param name="invoiceId">Supplier invoice ID</param>
+        /// <returns>Products linked to the invoice</returns>
+        Task<IEnumerable<Product>> GetProductsBySupplierInvoiceAsync(int invoiceId);
+
+        /// <summary>
         /// Gets products with low stock
         /// </summary>
         /// <returns>Products with low stock</returns>

@@ -1,5 +1,4 @@
-﻿// OfflinePOS.Core/Converters/StringMatchToVisibilityConverter.cs
-using System;
+﻿using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
@@ -7,23 +6,24 @@ using System.Windows.Data;
 namespace OfflinePOS.Core.Converters
 {
     /// <summary>
-    /// Converts a string match to a Visibility
+    /// Converts a string to Visibility based on whether it matches a parameter
     /// </summary>
     public class StringMatchToVisibilityConverter : IValueConverter
     {
         /// <summary>
-        /// Converts a string match to a Visibility
+        /// Converts string to Visibility
         /// </summary>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is string stringValue && parameter is string targetValue)
-            {
-                return string.Equals(stringValue, targetValue, StringComparison.OrdinalIgnoreCase)
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
-            }
+            string stringValue = value as string;
+            string compareValue = parameter as string;
 
-            return Visibility.Collapsed;
+            if (stringValue == null || compareValue == null)
+                return Visibility.Collapsed;
+
+            return string.Equals(stringValue, compareValue, StringComparison.OrdinalIgnoreCase)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         }
 
         /// <summary>
@@ -36,23 +36,24 @@ namespace OfflinePOS.Core.Converters
     }
 
     /// <summary>
-    /// Converts a non-match of strings to a Visibility
+    /// Converts a string to Visibility based on whether it does not match a parameter
     /// </summary>
     public class InverseStringMatchToVisibilityConverter : IValueConverter
     {
         /// <summary>
-        /// Converts a non-match of strings to a Visibility
+        /// Converts string to Visibility
         /// </summary>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is string stringValue && parameter is string targetValue)
-            {
-                return !string.Equals(stringValue, targetValue, StringComparison.OrdinalIgnoreCase)
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
-            }
+            string stringValue = value as string;
+            string compareValue = parameter as string;
 
-            return Visibility.Visible;
+            if (stringValue == null || compareValue == null)
+                return Visibility.Visible;
+
+            return !string.Equals(stringValue, compareValue, StringComparison.OrdinalIgnoreCase)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         }
 
         /// <summary>

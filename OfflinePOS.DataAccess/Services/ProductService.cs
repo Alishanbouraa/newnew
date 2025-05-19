@@ -1,4 +1,4 @@
-﻿// OfflinePOS.DataAccess/Services/ProductService.cs
+﻿// File: OfflinePOS.DataAccess/Services/ProductService.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Core.Models;
@@ -90,6 +90,37 @@ namespace OfflinePOS.DataAccess.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving products by supplier {SupplierId}", supplierId);
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<IEnumerable<Product>> GetProductsBySupplierInvoiceAsync(int invoiceId)
+        {
+            try
+            {
+                // Query products that are linked to the specified supplier invoice
+                var products = await _unitOfWork.Products.GetAsync(
+                    p => p.SupplierInvoiceId == invoiceId && p.IsActive);
+
+                // Fetch additional data for each product to ensure navigation properties are loaded
+                var results = new List<Product>();
+                foreach (var product in products)
+                {
+                    // Load the product's supplier if it has one
+                    if (product.SupplierId.HasValue)
+                    {
+                        product.Supplier = await _unitOfWork.Suppliers.GetByIdAsync(product.SupplierId.Value);
+                    }
+
+                    results.Add(product);
+                }
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving products by supplier invoice {InvoiceId}", invoiceId);
                 throw;
             }
         }
@@ -229,6 +260,7 @@ namespace OfflinePOS.DataAccess.Services
                                 ItemWholesalePrice = GetDecimalValue(data, "ItemWholesalePrice", 0),
                                 ItemSalePrice = GetDecimalValue(data, "ItemSalePrice", 0),
                                 SupplierId = GetIntValue(data, "SupplierId", null),
+                                SupplierInvoiceId = GetIntValue(data, "SupplierInvoiceId", null),
                                 SupplierProductCode = GetStringValue(data, "SupplierProductCode", ""),
                                 TrackInventory = GetBoolValue(data, "TrackInventory", true),
                                 AllowNegativeInventory = GetBoolValue(data, "AllowNegativeInventory", false),
@@ -327,7 +359,7 @@ namespace OfflinePOS.DataAccess.Services
                     // Write header
                     await writer.WriteLineAsync("Id,Name,Description,CategoryId,BoxBarcode,ItemBarcode,ItemsPerBox," +
                         "BoxPurchasePrice,BoxWholesalePrice,BoxSalePrice,ItemPurchasePrice,ItemWholesalePrice,ItemSalePrice," +
-                        "SupplierId,SupplierProductCode,TrackInventory,AllowNegativeInventory,Weight,Dimensions");
+                        "SupplierId,SupplierInvoiceId,SupplierProductCode,TrackInventory,AllowNegativeInventory,Weight,Dimensions");
 
                     // Write products
                     foreach (var product in products)
@@ -347,6 +379,7 @@ namespace OfflinePOS.DataAccess.Services
                             $"{product.ItemWholesalePrice}," +
                             $"{product.ItemSalePrice}," +
                             $"{product.SupplierId}," +
+                            $"{product.SupplierInvoiceId}," +
                             $"\"{EscapeCsvField(product.SupplierProductCode)}\"," +
                             $"{product.TrackInventory}," +
                             $"{product.AllowNegativeInventory}," +

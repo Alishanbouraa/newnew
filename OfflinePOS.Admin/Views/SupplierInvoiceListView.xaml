@@ -81,96 +81,170 @@
                     Foreground="White"/>
         </Grid>
 
-        <!-- Invoices DataGrid -->
-        <DataGrid Grid.Row="2" 
-                  ItemsSource="{Binding Invoices}" 
-                  SelectedItem="{Binding SelectedInvoice}" 
-                  AutoGenerateColumns="False" 
-                  IsReadOnly="True" 
-                  SelectionMode="Single" 
-                  BorderThickness="1" 
-                  BorderBrush="#CCCCCC" 
-                  AlternatingRowBackground="#F5F5F5">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Invoice #" 
-                                    Binding="{Binding InvoiceNumber}" 
-                                    Width="120"/>
+        <!-- Main Content Area with Tabs -->
+        <TabControl Grid.Row="2" Margin="0,0,0,10">
+            <!-- Invoice List Tab -->
+            <TabItem Header="Invoices">
+                <DataGrid ItemsSource="{Binding Invoices}" 
+                          SelectedItem="{Binding SelectedInvoice}" 
+                          AutoGenerateColumns="False" 
+                          IsReadOnly="True" 
+                          SelectionMode="Single" 
+                          BorderThickness="1" 
+                          BorderBrush="#CCCCCC" 
+                          AlternatingRowBackground="#F5F5F5">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Invoice #" 
+                                            Binding="{Binding InvoiceNumber}" 
+                                            Width="120"/>
 
-                <DataGridTextColumn Header="Date" 
-                                    Binding="{Binding InvoiceDate, StringFormat=d}" 
-                                    Width="100"/>
+                        <DataGridTextColumn Header="Date" 
+                                            Binding="{Binding InvoiceDate, StringFormat=d}" 
+                                            Width="100"/>
 
-                <DataGridTextColumn Header="Due Date" 
-                                    Binding="{Binding DueDate, StringFormat=d}" 
-                                    Width="100"/>
+                        <DataGridTextColumn Header="Due Date" 
+                                            Binding="{Binding DueDate, StringFormat=d}" 
+                                            Width="100"/>
 
-                <DataGridTextColumn Header="Total" 
-                                    Binding="{Binding TotalAmount, StringFormat=C2}" 
-                                    Width="100"/>
+                        <DataGridTextColumn Header="Total" 
+                                            Binding="{Binding TotalAmount, StringFormat=C2}" 
+                                            Width="100"/>
 
-                <DataGridTextColumn Header="Paid" 
-                                    Binding="{Binding PaidAmount, StringFormat=C2}" 
-                                    Width="100"/>
+                        <DataGridTextColumn Header="Paid" 
+                                            Binding="{Binding PaidAmount, StringFormat=C2}" 
+                                            Width="100"/>
 
-                <DataGridTextColumn Header="Balance" 
-                                    Binding="{Binding RemainingBalance, StringFormat=C2}" 
-                                    Width="100"/>
+                        <DataGridTextColumn Header="Balance" 
+                                            Binding="{Binding RemainingBalance, StringFormat=C2}" 
+                                            Width="100"/>
 
-                <DataGridTextColumn Header="Status" 
-                                    Binding="{Binding Status}" 
-                                    Width="100"/>
+                        <DataGridTextColumn Header="Status" 
+                                            Binding="{Binding Status}" 
+                                            Width="100"/>
 
-                <DataGridTemplateColumn Header="Actions" Width="*">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="Details" 
-                                        Command="{Binding DataContext.ViewDetailsCommand, 
-                                                 RelativeSource={RelativeSource AncestorType=DataGrid}}" 
-                                        CommandParameter="{Binding}" 
-                                        Margin="5,0" 
-                                        Padding="8,3" 
-                                        Background="#2196F3" 
-                                        Foreground="White"/>
+                        <DataGridTemplateColumn Header="Actions" Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Details" 
+                                                Command="{Binding DataContext.ViewDetailsCommand, 
+                                                         RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                                CommandParameter="{Binding}" 
+                                                Margin="5,0" 
+                                                Padding="8,3" 
+                                                Background="#2196F3" 
+                                                Foreground="White"/>
 
-                                <Button Content="Pay" 
-                                        Command="{Binding DataContext.MakePaymentCommand, 
-                                                 RelativeSource={RelativeSource AncestorType=DataGrid}}" 
-                                        CommandParameter="{Binding}" 
-                                        Margin="5,0" 
-                                        Padding="8,3" 
-                                        Background="#4CAF50" 
-                                        Foreground="White" 
-                                        Visibility="{Binding Status, 
-                                                   Converter={StaticResource InverseStringMatchToVisibilityConverter}, 
-                                                   ConverterParameter=Cancelled}"/>
+                                        <Button Content="Pay" 
+                                                Command="{Binding DataContext.MakePaymentCommand, 
+                                                         RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                                CommandParameter="{Binding}" 
+                                                Margin="5,0" 
+                                                Padding="8,3" 
+                                                Background="#4CAF50" 
+                                                Foreground="White" 
+                                                Visibility="{Binding Status, 
+                                                           Converter={StaticResource InverseStringMatchToVisibilityConverter}, 
+                                                           ConverterParameter=Cancelled}"/>
 
-                                <Button Content="Cancel" 
-                                        Command="{Binding DataContext.CancelInvoiceCommand, 
-                                                 RelativeSource={RelativeSource AncestorType=DataGrid}}" 
-                                        CommandParameter="{Binding}" 
-                                        Margin="5,0" 
-                                        Padding="8,3" 
-                                        Background="#F44336" 
-                                        Foreground="White" 
-                                        Visibility="{Binding Status, 
-                                                   Converter={StaticResource InverseStringMatchToVisibilityConverter}, 
-                                                   ConverterParameter=Cancelled}"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
+                                        <Button Content="Cancel" 
+                                                Command="{Binding DataContext.CancelInvoiceCommand, 
+                                                         RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                                CommandParameter="{Binding}" 
+                                                Margin="5,0" 
+                                                Padding="8,3" 
+                                                Background="#F44336" 
+                                                Foreground="White" 
+                                                Visibility="{Binding Status, 
+                                                           Converter={StaticResource InverseStringMatchToVisibilityConverter}, 
+                                                           ConverterParameter=Cancelled}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+
+            <!-- Products in Invoice Tab -->
+            <TabItem Header="Products in Invoice">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <TextBlock Grid.Row="0" Text="Products in Selected Invoice" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                    <!-- No selection message -->
+                    <TextBlock Grid.Row="1" Text="Please select an invoice to view its products" 
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="{Binding SelectedInvoice, Converter={StaticResource InverseObjectToVisibilityConverter}}"/>
+
+                    <!-- Products DataGrid -->
+                    <DataGrid Grid.Row="1" 
+                              ItemsSource="{Binding InvoiceProducts}" 
+                              AutoGenerateColumns="False" 
+                              IsReadOnly="True"
+                              BorderThickness="1"
+                              Visibility="{Binding SelectedInvoice, Converter={StaticResource ObjectToVisibilityConverter}}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
+                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                            <DataGridTextColumn Header="Box Purchase Price" Binding="{Binding BoxPurchasePrice, StringFormat=C2}" Width="150"/>
+                            <DataGridTextColumn Header="Item Purchase Price" Binding="{Binding ItemPurchasePrice, StringFormat=C2}" Width="150"/>
+                            <DataGridTextColumn Header="Supplier" Binding="{Binding Supplier.Name}" Width="150"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Summary -->
+                    <Grid Grid.Row="2" Margin="0,10,0,0" 
+                          Visibility="{Binding SelectedInvoice, Converter={StaticResource ObjectToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="{Binding InvoiceProducts.Count, StringFormat=Total Products: {0}}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="Total Products Value:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Grid.Column="2" Text="{Binding TotalProductsValue, StringFormat=C2}" 
+                                   VerticalAlignment="Center" FontWeight="Bold"/>
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!-- Comparison Panel -->
+        <Grid Grid.Row="3" Margin="0,0,0,10" 
+              Visibility="{Binding SelectedInvoice, Converter={StaticResource ObjectToVisibilityConverter}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="1" Text="Invoice Amount:" VerticalAlignment="Center" FontWeight="Bold" Margin="0,0,10,0"/>
+            <TextBlock Grid.Column="2" Text="{Binding SelectedInvoice.TotalAmount, StringFormat=C2}" 
+                       VerticalAlignment="Center" Margin="0,0,20,0"/>
+
+            <TextBlock Grid.Column="3" Text="Products Value:" VerticalAlignment="Center" FontWeight="Bold" Margin="0,0,10,0"/>
+            <TextBlock Grid.Column="4" Text="{Binding TotalProductsValue, StringFormat=C2}" 
+                       VerticalAlignment="Center"/>
+        </Grid>
 
         <!-- Summary -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,10,0,0">
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,0,0,10">
             <TextBlock Text="Total Unpaid Balance: " FontWeight="Bold"/>
             <TextBlock Text="{Binding TotalUnpaid, StringFormat=C2}" Foreground="Red"/>
         </StackPanel>
 
         <!-- Status Bar -->
-        <Grid Grid.Row="4" Margin="0,10,0,0">
+        <Grid Grid.Row="5" Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -189,7 +263,7 @@
 
         <!-- Busy Indicator -->
         <Border Grid.Row="0" 
-                Grid.RowSpan="5" 
+                Grid.RowSpan="6" 
                 Background="#80000000" 
                 Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
