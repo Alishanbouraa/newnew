@@ -40,23 +40,42 @@ namespace OfflinePOS.DataAccess.Services
         /// Initializes the database, creates it if it doesn't exist, and seeds initial data
         /// </summary>
         /// <returns>A task representing the asynchronous operation</returns>
+        // OfflinePOS.DataAccess/Services/DatabaseInitializer.cs
         public async Task InitializeDatabaseAsync()
         {
             try
             {
                 _logger.LogInformation("Starting database initialization...");
 
-                // For development purposes, delete and recreate the database
-                // This ensures a clean schema without migration conflicts
-                await _dbContext.Database.EnsureDeletedAsync();
-                _logger.LogInformation("Existing database deleted.");
+                // Check if database exists
+                bool dbExists = await _dbContext.Database.CanConnectAsync();
 
-                // Create a new database with the updated schema
-                await _dbContext.Database.EnsureCreatedAsync();
-                _logger.LogInformation("Database created successfully with updated schema.");
+                if (!dbExists)
+                {
+                    // Only create the database if it doesn't exist
+                    await _dbContext.Database.EnsureCreatedAsync();
+                    _logger.LogInformation("Database created successfully with schema.");
 
-                // Seed initial data
-                await SeedInitialDataAsync();
+                    // Seed initial data
+                    await SeedInitialDataAsync();
+                }
+                else
+                {
+                    // Database exists, check if schema needs to be updated
+                    // For a production app, you would use EF Core migrations here
+                    // For now, we'll just verify the tables exist
+                    bool tablesExist = await CheckTablesExistAsync();
+
+                    if (!tablesExist)
+                    {
+                        _logger.LogWarning("Database exists but required tables are missing.");
+                        await VerifyDatabaseSchemaAsync();
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Database already exists with correct schema.");
+                    }
+                }
 
                 _logger.LogInformation("Database initialization completed successfully");
             }
@@ -66,7 +85,6 @@ namespace OfflinePOS.DataAccess.Services
                 throw;
             }
         }
-
         /// <summary>
         /// Check if required tables exist in the database
         /// </summary>
