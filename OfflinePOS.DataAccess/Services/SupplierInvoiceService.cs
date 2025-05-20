@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+
+
 namespace OfflinePOS.DataAccess.Services
 {
     /// <summary>
@@ -100,72 +102,81 @@ namespace OfflinePOS.DataAccess.Services
 
             try
             {
-                await _unitOfWork.BeginTransactionAsync();
-
-                // Validate supplier exists
-                var supplier = await _unitOfWork.Suppliers.GetByIdAsync(invoice.SupplierId);
-                if (supplier == null)
-                    throw new InvalidOperationException($"Supplier with ID {invoice.SupplierId} not found");
-
-                // Calculate totals if not already set
-                if (invoice.TotalAmount == 0 && invoice.Items != null && invoice.Items.Any())
+                return await _unitOfWork.ExecuteWithStrategyAsync(async () =>
                 {
-                    invoice.TotalAmount = invoice.Items.Sum(i => i.TotalAmount);
-                }
+                    await _unitOfWork.BeginTransactionAsync();
 
-                // Set remaining balance
-                invoice.RemainingBalance = invoice.TotalAmount - invoice.PaidAmount;
-
-                // Set status based on payment
-                if (invoice.PaidAmount >= invoice.TotalAmount)
-                {
-                    invoice.Status = "Paid";
-                    invoice.RemainingBalance = 0;
-                }
-                else if (invoice.PaidAmount > 0)
-                {
-                    invoice.Status = "PartiallyPaid";
-                }
-                else
-                {
-                    invoice.Status = "Pending";
-                }
-
-                // Add invoice
-                await _unitOfWork.SupplierInvoices.AddAsync(invoice);
-                await _unitOfWork.SaveChangesAsync();
-
-                // Add invoice items if provided
-                if (invoice.Items != null && invoice.Items.Any())
-                {
-                    foreach (var item in invoice.Items)
+                    try
                     {
-                        item.InvoiceId = invoice.Id;
-                        await _unitOfWork.SupplierInvoiceItems.AddAsync(item);
+                        // Validate supplier exists
+                        var supplier = await _unitOfWork.Suppliers.GetByIdAsync(invoice.SupplierId);
+                        if (supplier == null)
+                            throw new InvalidOperationException($"Supplier with ID {invoice.SupplierId} not found");
+
+                        // Calculate totals if not already set
+                        if (invoice.TotalAmount == 0 && invoice.Items != null && invoice.Items.Any())
+                        {
+                            invoice.TotalAmount = invoice.Items.Sum(i => i.TotalAmount);
+                        }
+
+                        // Set remaining balance
+                        invoice.RemainingBalance = invoice.TotalAmount - invoice.PaidAmount;
+
+                        // Set status based on payment
+                        if (invoice.PaidAmount >= invoice.TotalAmount)
+                        {
+                            invoice.Status = "Paid";
+                            invoice.RemainingBalance = 0;
+                        }
+                        else if (invoice.PaidAmount > 0)
+                        {
+                            invoice.Status = "PartiallyPaid";
+                        }
+                        else
+                        {
+                            invoice.Status = "Pending";
+                        }
+
+                        // Add invoice
+                        await _unitOfWork.SupplierInvoices.AddAsync(invoice);
+                        await _unitOfWork.SaveChangesAsync();
+
+                        // Add invoice items if provided
+                        if (invoice.Items != null && invoice.Items.Any())
+                        {
+                            foreach (var item in invoice.Items)
+                            {
+                                item.InvoiceId = invoice.Id;
+                                await _unitOfWork.SupplierInvoiceItems.AddAsync(item);
+                            }
+                            await _unitOfWork.SaveChangesAsync();
+                        }
+
+                        // Update supplier balance
+                        supplier.CurrentBalance += invoice.RemainingBalance;
+                        await _unitOfWork.Suppliers.UpdateAsync(supplier);
+                        await _unitOfWork.SaveChangesAsync();
+
+                        await _unitOfWork.CommitTransactionAsync();
+
+                        _logger.LogInformation("Created supplier invoice {InvoiceNumber} for supplier {SupplierId}",
+                            invoice.InvoiceNumber, invoice.SupplierId);
+
+                        return invoice;
                     }
-                    await _unitOfWork.SaveChangesAsync();
-                }
-
-                // Update supplier balance
-                supplier.CurrentBalance += invoice.RemainingBalance;
-                await _unitOfWork.Suppliers.UpdateAsync(supplier);
-                await _unitOfWork.SaveChangesAsync();
-
-                await _unitOfWork.CommitTransactionAsync();
-
-                _logger.LogInformation("Created supplier invoice {InvoiceNumber} for supplier {SupplierId}",
-                    invoice.InvoiceNumber, invoice.SupplierId);
-
-                return invoice;
+                    catch
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        throw;
+                    }
+                });
             }
             catch (Exception ex)
             {
-                await _unitOfWork.RollbackTransactionAsync();
                 _logger.LogError(ex, "Error creating supplier invoice");
                 throw;
             }
         }
-
         /// <inheritdoc/>
         public async Task<bool> UpdateInvoiceAsync(SupplierInvoice invoice)
         {
@@ -174,133 +185,152 @@ namespace OfflinePOS.DataAccess.Services
 
             try
             {
-                await _unitOfWork.BeginTransactionAsync();
-
-                // Get existing invoice
-                var existingInvoice = await _unitOfWork.SupplierInvoices.GetByIdAsync(invoice.Id);
-                if (existingInvoice == null)
-                    return false;
-
-                // Calculate the difference in remaining balance
-                decimal oldRemainingBalance = existingInvoice.RemainingBalance;
-
-                // Update invoice properties
-                existingInvoice.InvoiceNumber = invoice.InvoiceNumber;
-                existingInvoice.InvoiceDate = invoice.InvoiceDate;
-                existingInvoice.DueDate = invoice.DueDate;
-                existingInvoice.Notes = invoice.Notes;
-                existingInvoice.LastUpdatedById = invoice.LastUpdatedById;
-                existingInvoice.LastUpdatedDate = DateTime.Now;
-
-                // Recalculate totals from items if items are provided
-                if (invoice.Items != null && invoice.Items.Any())
+                return await _unitOfWork.ExecuteWithStrategyAsync(async () =>
                 {
-                    existingInvoice.TotalAmount = invoice.Items.Sum(i => i.TotalAmount);
-                }
-                else
-                {
-                    // Get existing items
-                    var existingItems = await _unitOfWork.SupplierInvoiceItems.GetAsync(
-                        i => i.InvoiceId == invoice.Id);
-                    existingInvoice.TotalAmount = existingItems.Sum(i => i.TotalAmount);
-                }
+                    await _unitOfWork.BeginTransactionAsync();
 
-                // Recalculate remaining balance
-                existingInvoice.RemainingBalance = existingInvoice.TotalAmount - existingInvoice.PaidAmount;
-
-                // Update status
-                if (existingInvoice.RemainingBalance <= 0)
-                {
-                    existingInvoice.Status = "Paid";
-                    existingInvoice.RemainingBalance = 0;
-                }
-                else if (existingInvoice.PaidAmount > 0)
-                {
-                    existingInvoice.Status = "PartiallyPaid";
-                }
-                else
-                {
-                    existingInvoice.Status = "Pending";
-                }
-
-                await _unitOfWork.SupplierInvoices.UpdateAsync(existingInvoice);
-                await _unitOfWork.SaveChangesAsync();
-
-                // Update supplier balance if the remaining balance changed
-                if (existingInvoice.RemainingBalance != oldRemainingBalance)
-                {
-                    var supplier = await _unitOfWork.Suppliers.GetByIdAsync(existingInvoice.SupplierId);
-                    if (supplier != null)
+                    try
                     {
-                        supplier.CurrentBalance += (existingInvoice.RemainingBalance - oldRemainingBalance);
-                        await _unitOfWork.Suppliers.UpdateAsync(supplier);
+                        // Get existing invoice
+                        var existingInvoice = await _unitOfWork.SupplierInvoices.GetByIdAsync(invoice.Id);
+                        if (existingInvoice == null)
+                            return false;
+
+                        // Calculate the difference in remaining balance
+                        decimal oldRemainingBalance = existingInvoice.RemainingBalance;
+
+                        // Update invoice properties
+                        existingInvoice.InvoiceNumber = invoice.InvoiceNumber;
+                        existingInvoice.InvoiceDate = invoice.InvoiceDate;
+                        existingInvoice.DueDate = invoice.DueDate;
+                        existingInvoice.Notes = invoice.Notes;
+                        existingInvoice.LastUpdatedById = invoice.LastUpdatedById;
+                        existingInvoice.LastUpdatedDate = DateTime.Now;
+
+                        // Recalculate totals from items if items are provided
+                        if (invoice.Items != null && invoice.Items.Any())
+                        {
+                            existingInvoice.TotalAmount = invoice.Items.Sum(i => i.TotalAmount);
+                        }
+                        else
+                        {
+                            // Get existing items
+                            var existingItems = await _unitOfWork.SupplierInvoiceItems.GetAsync(
+                                i => i.InvoiceId == invoice.Id);
+                            existingInvoice.TotalAmount = existingItems.Sum(i => i.TotalAmount);
+                        }
+
+                        // Recalculate remaining balance
+                        existingInvoice.RemainingBalance = existingInvoice.TotalAmount - existingInvoice.PaidAmount;
+
+                        // Update status
+                        if (existingInvoice.RemainingBalance <= 0)
+                        {
+                            existingInvoice.Status = "Paid";
+                            existingInvoice.RemainingBalance = 0;
+                        }
+                        else if (existingInvoice.PaidAmount > 0)
+                        {
+                            existingInvoice.Status = "PartiallyPaid";
+                        }
+                        else
+                        {
+                            existingInvoice.Status = "Pending";
+                        }
+
+                        await _unitOfWork.SupplierInvoices.UpdateAsync(existingInvoice);
                         await _unitOfWork.SaveChangesAsync();
+
+                        // Update supplier balance if the remaining balance changed
+                        if (existingInvoice.RemainingBalance != oldRemainingBalance)
+                        {
+                            var supplier = await _unitOfWork.Suppliers.GetByIdAsync(existingInvoice.SupplierId);
+                            if (supplier != null)
+                            {
+                                supplier.CurrentBalance += (existingInvoice.RemainingBalance - oldRemainingBalance);
+                                await _unitOfWork.Suppliers.UpdateAsync(supplier);
+                                await _unitOfWork.SaveChangesAsync();
+                            }
+                        }
+
+                        await _unitOfWork.CommitTransactionAsync();
+
+                        _logger.LogInformation("Updated supplier invoice {InvoiceId}", invoice.Id);
+                        return true;
                     }
-                }
-
-                await _unitOfWork.CommitTransactionAsync();
-
-                _logger.LogInformation("Updated supplier invoice {InvoiceId}", invoice.Id);
-                return true;
+                    catch
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        throw;
+                    }
+                });
             }
             catch (Exception ex)
             {
-                await _unitOfWork.RollbackTransactionAsync();
                 _logger.LogError(ex, "Error updating supplier invoice {InvoiceId}", invoice.Id);
                 throw;
             }
         }
-
         /// <inheritdoc/>
         public async Task<bool> CancelInvoiceAsync(int invoiceId, string reason, int userId)
         {
             try
             {
-                await _unitOfWork.BeginTransactionAsync();
-
-                // Get existing invoice
-                var invoice = await _unitOfWork.SupplierInvoices.GetByIdAsync(invoiceId);
-                if (invoice == null)
-                    return false;
-
-                // Check if already cancelled
-                if (invoice.Status == "Cancelled")
-                    return true;
-
-                // Store the remaining balance to adjust supplier
-                decimal remainingBalance = invoice.RemainingBalance;
-
-                // Update invoice
-                invoice.Status = "Cancelled";
-                invoice.Notes = string.IsNullOrEmpty(invoice.Notes)
-                    ? $"Cancelled: {reason}"
-                    : $"{invoice.Notes}\nCancelled: {reason}";
-                invoice.LastUpdatedById = userId;
-                invoice.LastUpdatedDate = DateTime.Now;
-
-                await _unitOfWork.SupplierInvoices.UpdateAsync(invoice);
-                await _unitOfWork.SaveChangesAsync();
-
-                // Update supplier balance
-                if (remainingBalance > 0)
+                return await _unitOfWork.ExecuteWithStrategyAsync(async () =>
                 {
-                    var supplier = await _unitOfWork.Suppliers.GetByIdAsync(invoice.SupplierId);
-                    if (supplier != null)
+                    await _unitOfWork.BeginTransactionAsync();
+
+                    try
                     {
-                        supplier.CurrentBalance -= remainingBalance;
-                        await _unitOfWork.Suppliers.UpdateAsync(supplier);
+                        // Get existing invoice
+                        var invoice = await _unitOfWork.SupplierInvoices.GetByIdAsync(invoiceId);
+                        if (invoice == null)
+                            return false;
+
+                        // Check if already cancelled
+                        if (invoice.Status == "Cancelled")
+                            return true;
+
+                        // Store the remaining balance to adjust supplier
+                        decimal remainingBalance = invoice.RemainingBalance;
+
+                        // Update invoice
+                        invoice.Status = "Cancelled";
+                        invoice.Notes = string.IsNullOrEmpty(invoice.Notes)
+                            ? $"Cancelled: {reason}"
+                            : $"{invoice.Notes}\nCancelled: {reason}";
+                        invoice.LastUpdatedById = userId;
+                        invoice.LastUpdatedDate = DateTime.Now;
+
+                        await _unitOfWork.SupplierInvoices.UpdateAsync(invoice);
                         await _unitOfWork.SaveChangesAsync();
+
+                        // Update supplier balance
+                        if (remainingBalance > 0)
+                        {
+                            var supplier = await _unitOfWork.Suppliers.GetByIdAsync(invoice.SupplierId);
+                            if (supplier != null)
+                            {
+                                supplier.CurrentBalance -= remainingBalance;
+                                await _unitOfWork.Suppliers.UpdateAsync(supplier);
+                                await _unitOfWork.SaveChangesAsync();
+                            }
+                        }
+
+                        await _unitOfWork.CommitTransactionAsync();
+
+                        _logger.LogInformation("Cancelled supplier invoice {InvoiceId}", invoiceId);
+                        return true;
                     }
-                }
-
-                await _unitOfWork.CommitTransactionAsync();
-
-                _logger.LogInformation("Cancelled supplier invoice {InvoiceId}", invoiceId);
-                return true;
+                    catch
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        throw;
+                    }
+                });
             }
             catch (Exception ex)
             {
-                await _unitOfWork.RollbackTransactionAsync();
                 _logger.LogError(ex, "Error cancelling supplier invoice {InvoiceId}", invoiceId);
                 throw;
             }
@@ -317,56 +347,66 @@ namespace OfflinePOS.DataAccess.Services
 
             try
             {
-                await _unitOfWork.BeginTransactionAsync();
-
-                // Validate supplier
-                var supplier = await _unitOfWork.Suppliers.GetByIdAsync(payment.SupplierId);
-                if (supplier == null)
-                    throw new InvalidOperationException($"Supplier with ID {payment.SupplierId} not found");
-
-                // Add the payment
-                await _unitOfWork.SupplierPayments.AddAsync(payment);
-                await _unitOfWork.SaveChangesAsync();
-
-                // If this is for a specific invoice, update the invoice
-                if (payment.InvoiceId.HasValue)
+                return await _unitOfWork.ExecuteWithStrategyAsync(async () =>
                 {
-                    var invoice = await _unitOfWork.SupplierInvoices.GetByIdAsync(payment.InvoiceId.Value);
-                    if (invoice != null)
+                    await _unitOfWork.BeginTransactionAsync();
+
+                    try
                     {
-                        invoice.PaidAmount += payment.Amount;
-                        invoice.RemainingBalance = Math.Max(0, invoice.TotalAmount - invoice.PaidAmount);
+                        // Validate supplier
+                        var supplier = await _unitOfWork.Suppliers.GetByIdAsync(payment.SupplierId);
+                        if (supplier == null)
+                            throw new InvalidOperationException($"Supplier with ID {payment.SupplierId} not found");
 
-                        // Update status
-                        if (invoice.RemainingBalance <= 0)
-                        {
-                            invoice.Status = "Paid";
-                        }
-                        else if (invoice.PaidAmount > 0)
-                        {
-                            invoice.Status = "PartiallyPaid";
-                        }
-
-                        await _unitOfWork.SupplierInvoices.UpdateAsync(invoice);
+                        // Add the payment
+                        await _unitOfWork.SupplierPayments.AddAsync(payment);
                         await _unitOfWork.SaveChangesAsync();
+
+                        // If this is for a specific invoice, update the invoice
+                        if (payment.InvoiceId.HasValue)
+                        {
+                            var invoice = await _unitOfWork.SupplierInvoices.GetByIdAsync(payment.InvoiceId.Value);
+                            if (invoice != null)
+                            {
+                                invoice.PaidAmount += payment.Amount;
+                                invoice.RemainingBalance = Math.Max(0, invoice.TotalAmount - invoice.PaidAmount);
+
+                                // Update status
+                                if (invoice.RemainingBalance <= 0)
+                                {
+                                    invoice.Status = "Paid";
+                                }
+                                else if (invoice.PaidAmount > 0)
+                                {
+                                    invoice.Status = "PartiallyPaid";
+                                }
+
+                                await _unitOfWork.SupplierInvoices.UpdateAsync(invoice);
+                                await _unitOfWork.SaveChangesAsync();
+                            }
+                        }
+
+                        // Update supplier balance
+                        supplier.CurrentBalance = Math.Max(0, supplier.CurrentBalance - payment.Amount);
+                        await _unitOfWork.Suppliers.UpdateAsync(supplier);
+                        await _unitOfWork.SaveChangesAsync();
+
+                        await _unitOfWork.CommitTransactionAsync();
+
+                        _logger.LogInformation("Processed supplier payment of {Amount} for supplier {SupplierId}",
+                            payment.Amount, payment.SupplierId);
+
+                        return payment;
                     }
-                }
-
-                // Update supplier balance
-                supplier.CurrentBalance = Math.Max(0, supplier.CurrentBalance - payment.Amount);
-                await _unitOfWork.Suppliers.UpdateAsync(supplier);
-                await _unitOfWork.SaveChangesAsync();
-
-                await _unitOfWork.CommitTransactionAsync();
-
-                _logger.LogInformation("Processed supplier payment of {Amount} for supplier {SupplierId}",
-                    payment.Amount, payment.SupplierId);
-
-                return payment;
+                    catch
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        throw;
+                    }
+                });
             }
             catch (Exception ex)
             {
-                await _unitOfWork.RollbackTransactionAsync();
                 _logger.LogError(ex, "Error processing supplier payment");
                 throw;
             }
