@@ -322,9 +322,44 @@ namespace OfflinePOS.Admin.ViewModels
         /// </summary>
         private void ViewInvoiceDetails(object parameter)
         {
-            // Implementation will be added later
-            MessageBox.Show($"View details for invoice {SelectedInvoice.InvoiceNumber} is not implemented yet.",
-                "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
+            var invoice = parameter as SupplierInvoice ?? SelectedInvoice;
+            if (invoice == null)
+                return;
+
+            try
+            {
+                IsBusy = true;
+                StatusMessage = "Loading invoice details...";
+
+                // Create the view model
+                var viewModel = new SupplierInvoiceDetailsViewModel(
+                    _supplierInvoiceService,
+                    _productService,
+                    _serviceProvider.GetService<ILogger<SupplierInvoiceDetailsViewModel>>(),
+                    _currentUser,
+                    invoice,
+                    _supplier,
+                    _serviceProvider);
+
+                // Create and show the details view
+                var detailsView = new SupplierInvoiceDetailsView(viewModel)
+                {
+                    Owner = Application.Current.MainWindow
+                };
+
+                detailsView.ShowDialog();
+
+                StatusMessage = "Invoice details viewed successfully";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error viewing invoice details: {ex.Message}";
+                _logger.LogError(ex, "Error viewing details for invoice {InvoiceId}", invoice.Id);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         /// <summary>

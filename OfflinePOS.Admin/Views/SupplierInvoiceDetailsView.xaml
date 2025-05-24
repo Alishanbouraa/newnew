@@ -1,0 +1,148 @@
+﻿<!-- OfflinePOS.Admin/Views/SupplierInvoiceDetailsView.xaml -->
+<Window x:Class="OfflinePOS.Admin.Views.SupplierInvoiceDetailsView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:OfflinePOS.Admin.Views"
+        mc:Ignorable="d"
+        Title="{Binding WindowTitle}" 
+        Height="600" Width="800"
+        WindowStartupLocation="CenterOwner"
+        Loaded="Window_Loaded">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" 
+                   Text="{Binding WindowTitle}" 
+                   FontSize="18" 
+                   FontWeight="Bold" 
+                   Margin="0,0,0,10"/>
+
+        <!-- Invoice Summary -->
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Left Column -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Supplier:" FontWeight="Bold" Margin="0,5,10,5"/>
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Supplier.Name}" Margin="0,5,20,5"/>
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Invoice Number:" FontWeight="Bold" Margin="0,5,10,5"/>
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Invoice.InvoiceNumber}" Margin="0,5,20,5"/>
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Invoice Date:" FontWeight="Bold" Margin="0,5,10,5"/>
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Invoice.InvoiceDate, StringFormat=d}" Margin="0,5,20,5"/>
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Due Date:" FontWeight="Bold" Margin="0,5,10,5"/>
+            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Invoice.DueDate, StringFormat=d}" Margin="0,5,20,5"/>
+
+            <!-- Right Column -->
+            <TextBlock Grid.Row="0" Grid.Column="2" Text="Status:" FontWeight="Bold" Margin="0,5,10,5"/>
+            <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding Invoice.Status}" Margin="0,5,0,5"/>
+
+            <TextBlock Grid.Row="1" Grid.Column="2" Text="Total Amount:" FontWeight="Bold" Margin="0,5,10,5"/>
+            <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding Invoice.TotalAmount, StringFormat=C2}" Margin="0,5,0,5"/>
+
+            <TextBlock Grid.Row="2" Grid.Column="2" Text="Paid Amount:" FontWeight="Bold" Margin="0,5,10,5"/>
+            <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding Invoice.PaidAmount, StringFormat=C2}" Margin="0,5,0,5"/>
+
+            <TextBlock Grid.Row="3" Grid.Column="2" Text="Balance:" FontWeight="Bold" Margin="0,5,10,5"/>
+            <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding Invoice.RemainingBalance, StringFormat=C2}" 
+                       Foreground="{Binding Invoice.RemainingBalance, Converter={StaticResource DecimalToColorConverter}}" 
+                       Margin="0,5,0,5"/>
+        </Grid>
+
+        <!-- Tab Control - Only Payments and Notes tabs -->
+        <TabControl Grid.Row="2" Margin="0,10">
+            <!-- Payments Tab -->
+            <TabItem Header="Payments">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <DataGrid Grid.Row="0" 
+                              ItemsSource="{Binding Payments}" 
+                              AutoGenerateColumns="False" 
+                              IsReadOnly="True"
+                              AlternatingRowBackground="#F5F5F5">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Payment ID" Binding="{Binding Id}" Width="80"/>
+                            <DataGridTextColumn Header="Date" Binding="{Binding PaymentDate, StringFormat=d}" Width="100"/>
+                            <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=C2}" Width="100"/>
+                            <DataGridTextColumn Header="Method" Binding="{Binding PaymentMethod}" Width="100"/>
+                            <DataGridTextColumn Header="Reference" Binding="{Binding Reference}" Width="120"/>
+                            <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <Button Grid.Row="1" 
+                            Content="Make Payment" 
+                            Command="{Binding MakePaymentCommand}" 
+                            HorizontalAlignment="Right" 
+                            Margin="0,10,0,0" 
+                            Padding="15,5" 
+                            Background="#4CAF50" 
+                            Foreground="White"
+                            Visibility="{Binding Invoice.Status, Converter={StaticResource InverseStringMatchToVisibilityConverter}, ConverterParameter=Paid}"/>
+                </Grid>
+            </TabItem>
+
+            <!-- Notes Tab -->
+            <TabItem Header="Notes">
+                <TextBox Text="{Binding Invoice.Notes, Mode=OneWay}" 
+                         IsReadOnly="True" 
+                         TextWrapping="Wrap" 
+                         AcceptsReturn="True" 
+                         VerticalScrollBarVisibility="Auto"/>
+            </TabItem>
+        </TabControl>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="3" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right" 
+                    Margin="0,10,0,0">
+            <Button Content="Print Invoice" 
+                    Command="{Binding PrintInvoiceCommand}" 
+                    Margin="0,0,10,0" 
+                    Padding="15,5" 
+                    Background="#2196F3" 
+                    Foreground="White"/>
+            <Button Content="Close" 
+                    Command="{Binding CloseCommand}" 
+                    Padding="15,5" 
+                    Background="#9E9E9E" 
+                    Foreground="White"/>
+        </StackPanel>
+
+        <!-- Busy Indicator -->
+        <Border Grid.Row="0" Grid.RowSpan="4" 
+                Background="#80000000" 
+                Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="100" Height="10" Margin="0,0,0,10"/>
+                <TextBlock Text="{Binding StatusMessage}" Foreground="White" FontWeight="Bold"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

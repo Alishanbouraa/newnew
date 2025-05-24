@@ -38,6 +38,9 @@
     <Compile Update="Views\SupplierDialogView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Views\SupplierInvoiceDetailsView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Views\SupplierInvoiceDialogView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>

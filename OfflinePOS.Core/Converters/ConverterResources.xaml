@@ -14,5 +14,5 @@
     <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
     <converters:ObjectToVisibilityConverter x:Key="ObjectToVisibilityConverter"/>
     <converters:InverseObjectToVisibilityConverter x:Key="InverseObjectToVisibilityConverter"/>
-
+    <converters:DecimalToColorConverter x:Key="DecimalToColorConverter"/>
 </ResourceDictionary>
