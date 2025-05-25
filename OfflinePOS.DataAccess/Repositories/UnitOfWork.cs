@@ -1,12 +1,10 @@
 ﻿// File: OfflinePOS.DataAccess/Repositories/UnitOfWork.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Extensions.DependencyInjection;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.Repositories;
 using System;
 using System.Collections.Concurrent;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace OfflinePOS.DataAccess.Repositories
@@ -16,27 +14,24 @@ namespace OfflinePOS.DataAccess.Repositories
     /// </summary>
     public class UnitOfWork : IUnitOfWork
     {
-        private readonly IServiceProvider _serviceProvider;
         private readonly ApplicationDbContext _context;
+        private readonly object _transactionLock = new object();
         private IDbContextTransaction _transaction;
         private bool _disposed = false;
-        private readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
-        // Repository instances
+        // Thread-safe repository cache
         private readonly ConcurrentDictionary<Type, object> _repositories = new ConcurrentDictionary<Type, object>();
 
         /// <summary>
         /// Initializes a new instance of the UnitOfWork class
         /// </summary>
         /// <param name="context">Database context</param>
-        /// <param name="serviceProvider">Service provider for creating repositories</param>
-        public UnitOfWork(ApplicationDbContext context, IServiceProvider serviceProvider)
+        public UnitOfWork(ApplicationDbContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         }
 
-        /// <inheritdoc/>
+        // Repository properties with lazy initialization
         public IRepository<User> Users => GetRepository<User>();
         public IRepository<Product> Products => GetRepository<Product>();
         public IRepository<Stock> Stocks => GetRepository<Stock>();
@@ -49,8 +44,6 @@ namespace OfflinePOS.DataAccess.Repositories
         public IRepository<DrawerOperation> DrawerOperations => GetRepository<DrawerOperation>();
         public IRepository<DrawerTransaction> DrawerTransactions => GetRepository<DrawerTransaction>();
         public IRepository<CompanySetting> CompanySettings => GetRepository<CompanySetting>();
-
-        // New repository properties for supplier invoice functionality
         public IRepository<SupplierInvoice> SupplierInvoices => GetRepository<SupplierInvoice>();
         public IRepository<SupplierInvoiceItem> SupplierInvoiceItems => GetRepository<SupplierInvoiceItem>();
         public IRepository<SupplierPayment> SupplierPayments => GetRepository<SupplierPayment>();
@@ -58,6 +51,8 @@ namespace OfflinePOS.DataAccess.Repositories
         /// <summary>
         /// Gets a repository of the specified type, creating it if necessary
         /// </summary>
+        /// <typeparam name="T">Entity type</typeparam>
+        /// <returns>Repository instance</returns>
         private IRepository<T> GetRepository<T>() where T : class
         {
             return (IRepository<T>)_repositories.GetOrAdd(
@@ -65,39 +60,41 @@ namespace OfflinePOS.DataAccess.Repositories
                 _ => new Repository<T>(_context));
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Begins a database transaction
+        /// </summary>
         public void BeginTransaction()
         {
-            _lock.Wait();
-            try
+            lock (_transactionLock)
             {
-                _transaction = _transaction ?? _context.Database.BeginTransaction();
-            }
-            finally
-            {
-                _lock.Release();
+                if (_transaction == null)
+                {
+                    _transaction = _context.Database.BeginTransaction();
+                }
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Begins a database transaction asynchronously
+        /// </summary>
         public async Task BeginTransactionAsync()
         {
-            await _lock.WaitAsync();
-            try
+            lock (_transactionLock)
             {
-                _transaction = _transaction ?? await _context.Database.BeginTransactionAsync();
-            }
-            finally
-            {
-                _lock.Release();
+                if (_transaction == null)
+                {
+                    // Note: We need to use synchronous approach within lock
+                    _transaction = _context.Database.BeginTransactionAsync().GetAwaiter().GetResult();
+                }
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Commits the current transaction
+        /// </summary>
         public void CommitTransaction()
         {
-            _lock.Wait();
-            try
+            lock (_transactionLock)
             {
                 if (_transaction == null)
                     return;
@@ -112,42 +109,40 @@ namespace OfflinePOS.DataAccess.Repositories
                     _transaction = null;
                 }
             }
-            finally
-            {
-                _lock.Release();
-            }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Commits the current transaction asynchronously
+        /// </summary>
         public async Task CommitTransactionAsync()
         {
-            await _lock.WaitAsync();
-            try
+            IDbContextTransaction transactionToCommit = null;
+
+            lock (_transactionLock)
             {
                 if (_transaction == null)
                     return;
 
-                try
-                {
-                    await _transaction.CommitAsync();
-                }
-                finally
-                {
-                    await _transaction.DisposeAsync();
-                    _transaction = null;
-                }
+                transactionToCommit = _transaction;
+                _transaction = null;
+            }
+
+            try
+            {
+                await transactionToCommit.CommitAsync();
             }
             finally
             {
-                _lock.Release();
+                await transactionToCommit.DisposeAsync();
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Rolls back the current transaction
+        /// </summary>
         public void RollbackTransaction()
         {
-            _lock.Wait();
-            try
+            lock (_transactionLock)
             {
                 if (_transaction == null)
                     return;
@@ -162,51 +157,60 @@ namespace OfflinePOS.DataAccess.Repositories
                     _transaction = null;
                 }
             }
-            finally
-            {
-                _lock.Release();
-            }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Rolls back the current transaction asynchronously
+        /// </summary>
         public async Task RollbackTransactionAsync()
         {
-            await _lock.WaitAsync();
-            try
+            IDbContextTransaction transactionToRollback = null;
+
+            lock (_transactionLock)
             {
                 if (_transaction == null)
                     return;
 
-                try
-                {
-                    await _transaction.RollbackAsync();
-                }
-                finally
-                {
-                    await _transaction.DisposeAsync();
-                    _transaction = null;
-                }
+                transactionToRollback = _transaction;
+                _transaction = null;
+            }
+
+            try
+            {
+                await transactionToRollback.RollbackAsync();
             }
             finally
             {
-                _lock.Release();
+                await transactionToRollback.DisposeAsync();
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Saves all changes to the database
+        /// </summary>
+        /// <returns>Number of state entries written to the database</returns>
         public async Task<int> SaveChangesAsync()
         {
             return await _context.SaveChangesAsync();
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Executes a database operation with retry logic
+        /// </summary>
+        /// <typeparam name="TResult">The type of the result</typeparam>
+        /// <param name="operation">The operation to execute</param>
+        /// <returns>The result of the operation</returns>
         public async Task<TResult> ExecuteWithStrategyAsync<TResult>(Func<Task<TResult>> operation)
         {
             var strategy = _context.Database.CreateExecutionStrategy();
             return await strategy.ExecuteAsync(operation);
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Executes a database operation with retry logic
+        /// </summary>
+        /// <param name="operation">The operation to execute</param>
+        /// <returns>A task representing the asynchronous operation</returns>
         public async Task ExecuteWithStrategyAsync(Func<Task> operation)
         {
             var strategy = _context.Database.CreateExecutionStrategy();
@@ -214,7 +218,7 @@ namespace OfflinePOS.DataAccess.Repositories
         }
 
         /// <summary>
-        /// Disposes the context and resources
+        /// Releases all resources used by the UnitOfWork
         /// </summary>
         public void Dispose()
         {
@@ -223,26 +227,24 @@ namespace OfflinePOS.DataAccess.Repositories
         }
 
         /// <summary>
-        /// Disposes the context and resources
+        /// Releases resources used by the UnitOfWork
         /// </summary>
-        /// <param name="disposing">Whether to dispose managed resources</param>
+        /// <param name="disposing">True to release both managed and unmanaged resources</param>
         protected virtual void Dispose(bool disposing)
         {
             if (!_disposed)
             {
                 if (disposing)
                 {
-                    // Release the lock
-                    _lock.Dispose();
-
-                    // Dispose transaction if active
-                    if (_transaction != null)
+                    lock (_transactionLock)
                     {
-                        _transaction.Dispose();
-                        _transaction = null;
+                        if (_transaction != null)
+                        {
+                            _transaction.Dispose();
+                            _transaction = null;
+                        }
                     }
 
-                    // Dispose context
                     _context.Dispose();
                 }
                 _disposed = true;

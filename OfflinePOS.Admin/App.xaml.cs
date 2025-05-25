@@ -66,7 +66,7 @@ namespace OfflinePOS.Admin
                 // Initialize database before showing the login window
                 _logger.LogInformation("Initializing application...");
                 var dbInitializer = _serviceProvider.GetRequiredService<DatabaseInitializer>();
-                await dbInitializer.InitializeDatabaseAsync(); // This will recreate the database with proper schema
+                await dbInitializer.InitializeDatabaseAsync();
 
                 ShowLoginWindow();
 
@@ -82,7 +82,7 @@ namespace OfflinePOS.Admin
         }
 
         /// <summary>
-        /// Configures application services for dependency injection
+        /// Configures application services for dependency injection with proper DbContext scoping
         /// </summary>
         private void ConfigureServices(IServiceCollection services)
         {
@@ -97,39 +97,51 @@ namespace OfflinePOS.Admin
             // Register configuration
             services.AddSingleton(_configuration);
 
-            // Register DbContext
+            // FIXED: Register DbContext with scoped lifetime to prevent concurrency issues
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(
                     _configuration.GetConnectionString("DefaultConnection"),
                     sqlOptions =>
                     {
                         sqlOptions.EnableRetryOnFailure(
-                            maxRetryCount: 5,
-                            maxRetryDelay: TimeSpan.FromSeconds(30),
+                            maxRetryCount: 3,
+                            maxRetryDelay: TimeSpan.FromSeconds(10),
                             errorNumbersToAdd: null);
                     }),
-                    ServiceLifetime.Transient);
+                    ServiceLifetime.Scoped);
 
             // Register database initializer
             services.AddTransient<DatabaseInitializer>();
 
-            // Register repositories and UoW
-            services.AddTransient(typeof(IRepository<>), typeof(Repository<>));
-            services.AddTransient<IUnitOfWork>(provider =>
-                new UnitOfWork(
-                    provider.GetRequiredService<ApplicationDbContext>(),
-                    provider));
+            // FIXED: Register repositories and UoW with scoped lifetime to match DbContext
+            services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-            // Register core services
-            services.AddTransient<IAuthService, AuthService>();
-            services.AddTransient<IProductService, ProductService>();
-            services.AddTransient<ICategoryService, CategoryService>();
-            services.AddTransient<ISupplierService, SupplierService>();
-            services.AddTransient<ISupplierInvoiceService, SupplierInvoiceService>();
-            services.AddTransient<IStockService, StockService>();
-            services.AddTransient<ICustomerService, CustomerService>();
-            services.AddTransient<ITransactionService, TransactionService>();
-            services.AddTransient<IDrawerService, DrawerService>();
+            // FIXED: Register core services as scoped to prevent DbContext sharing
+            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<ICategoryService, CategoryService>();
+            services.AddScoped<ISupplierService, SupplierService>();
+            services.AddScoped<ISupplierInvoiceService, SupplierInvoiceService>();
+            services.AddScoped<IStockService, StockService>();
+            services.AddScoped<ICustomerService, CustomerService>();
+            services.AddScoped<ITransactionService, TransactionService>();
+            services.AddScoped<IDrawerService, DrawerService>();
+
+            // Register SupplierInvoiceDetailsViewModel factory
+            services.AddTransient<Func<SupplierInvoice, Supplier, SupplierInvoiceDetailsViewModel>>(
+                provider => (invoice, supplier) =>
+                    new SupplierInvoiceDetailsViewModel(
+                        provider.GetRequiredService<ISupplierInvoiceService>(),
+                        provider.GetRequiredService<IProductService>(),
+                        provider.GetRequiredService<ILogger<SupplierInvoiceDetailsViewModel>>(),
+                        _currentUser,
+                        invoice,
+                        supplier,
+                        provider));
+
+            // Register views
+            services.AddTransient<SupplierInvoiceDetailsView>();
 
             // Register ViewModels for Inventory Management
             services.AddTransient(provider =>
@@ -146,6 +158,7 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<ILogger<BarcodeManagementViewModel>>(),
                     _currentUser));
 
+            // Register Supplier Invoice Dialog factory
             services.AddTransient<Func<Supplier, SupplierInvoiceDialogViewModel>>(provider => (supplier) =>
                 new SupplierInvoiceDialogViewModel(
                     provider.GetRequiredService<ISupplierInvoiceService>(),
@@ -156,6 +169,7 @@ namespace OfflinePOS.Admin
 
             services.AddTransient<SupplierInvoiceDialogView>();
 
+            // Register Product Import/Export ViewModel
             services.AddTransient(provider =>
                 new ProductImportExportViewModel(
                     provider.GetRequiredService<IProductService>(),
@@ -163,6 +177,7 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<ILogger<ProductImportExportViewModel>>(),
                     _currentUser));
 
+            // FIXED: Register ProductViewModel with service provider for proper scoping
             services.AddTransient(provider =>
                 new ProductViewModel(
                     provider.GetRequiredService<IProductService>(),
@@ -171,7 +186,7 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<ISupplierService>(),
                     provider.GetRequiredService<ILogger<ProductViewModel>>(),
                     _currentUser,
-                    provider)); // Pass service provider for navigation
+                    provider));
 
             // Register Category ViewModels
             services.AddTransient(provider =>
@@ -179,7 +194,7 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<ICategoryService>(),
                     provider.GetRequiredService<ILogger<CategoryViewModel>>(),
                     _currentUser,
-                    provider)); // Pass service provider for logger resolution
+                    provider));
 
             // Register Supplier ViewModels
             services.AddTransient(provider =>
@@ -189,7 +204,7 @@ namespace OfflinePOS.Admin
                     _currentUser,
                     provider));
 
-            // Register Supplier Invoice ViewModels
+            // Register Supplier Invoice List factory
             services.AddTransient<Func<Supplier, SupplierInvoiceListViewModel>>(provider => (supplier) =>
                 new SupplierInvoiceListViewModel(
                     provider.GetRequiredService<ISupplierInvoiceService>(),
@@ -215,7 +230,7 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<ILogger<TransactionHistoryViewModel>>(),
                     _currentUser));
 
-            // Register ViewModel factories - Category
+            // FIXED: Register ViewModel factories with service provider pattern
             services.AddTransient<Func<Category, bool, CategoryDialogViewModel>>(provider => (category, isNew) =>
                 new CategoryDialogViewModel(
                     provider.GetRequiredService<ICategoryService>(),
@@ -224,18 +239,15 @@ namespace OfflinePOS.Admin
                     category,
                     isNew));
 
-            // Register ViewModel factories - Product
+            // FIXED: Updated ProductDialogViewModel factory to use service provider
             services.AddTransient<Func<Product, ProductDialogViewModel>>(provider => (product) =>
                 new ProductDialogViewModel(
-                    provider.GetRequiredService<IProductService>(),
-                    provider.GetRequiredService<ICategoryService>(),
-                    provider.GetRequiredService<ISupplierService>(),
-                    provider.GetRequiredService<ISupplierInvoiceService>(),
+                    provider,
                     provider.GetRequiredService<ILogger<ProductDialogViewModel>>(),
                     _currentUser,
                     product));
 
-            // Register ViewModel factories - Supplier
+            // Register Supplier Dialog factory
             services.AddTransient<Func<Supplier, SupplierDialogViewModel>>(provider => (supplier) =>
                 new SupplierDialogViewModel(
                     provider.GetRequiredService<ISupplierService>(),
@@ -243,7 +255,7 @@ namespace OfflinePOS.Admin
                     _currentUser,
                     supplier));
 
-            // Register ViewModel factories - Customer
+            // Register Customer Dialog factory
             services.AddTransient<Func<Customer, CustomerDialogViewModel>>(provider => (customer) =>
                 new CustomerDialogViewModel(
                     provider.GetRequiredService<ICustomerService>(),
@@ -251,6 +263,7 @@ namespace OfflinePOS.Admin
                     _currentUser,
                     customer));
 
+            // Register Settle Debt factory
             services.AddTransient<Func<Customer, SettleDebtViewModel>>(provider => (customer) =>
                 new SettleDebtViewModel(
                     provider.GetRequiredService<ICustomerService>(),
@@ -258,14 +271,14 @@ namespace OfflinePOS.Admin
                     _currentUser,
                     customer));
 
-            // Register ViewModel factories - Transaction
+            // Register Transaction Details factory
             services.AddTransient<Func<Transaction, TransactionDetailsViewModel>>(provider => (transaction) =>
                 new TransactionDetailsViewModel(
                     provider.GetRequiredService<ITransactionService>(),
                     provider.GetRequiredService<ILogger<TransactionDetailsViewModel>>(),
                     transaction));
 
-            // Register ViewModel factory for Supplier Payment
+            // Register Supplier Payment factory
             services.AddTransient<Func<Supplier, SupplierInvoice, SupplierPaymentViewModel>>(provider => (supplier, invoice) =>
                 new SupplierPaymentViewModel(
                     provider.GetRequiredService<ISupplierInvoiceService>(),
@@ -274,6 +287,25 @@ namespace OfflinePOS.Admin
                     supplier,
                     invoice));
 
+            // Register all views
+            RegisterViews(services);
+
+            // Register authentication viewmodel
+            services.AddTransient(provider =>
+                new LoginViewModel(
+                    provider.GetRequiredService<IAuthService>(),
+                    user =>
+                    {
+                        _currentUser = user;
+                        ShowMainWindow();
+                    }));
+        }
+
+        /// <summary>
+        /// Registers all view components
+        /// </summary>
+        private void RegisterViews(IServiceCollection services)
+        {
             // Register inventory views
             services.AddTransient<StockManagementView>();
             services.AddTransient<BarcodeManagementView>();
@@ -302,24 +334,13 @@ namespace OfflinePOS.Admin
 
             // Register login window
             services.AddTransient<LoginView>();
-
-            // Register authentication viewmodel
-            services.AddTransient(provider =>
-                new LoginViewModel(
-                    provider.GetRequiredService<IAuthService>(),
-                    user =>
-                    {
-                        _currentUser = user;
-                        ShowMainWindow();
-                    }));
         }
 
         /// <summary>
-        /// Configures XAML diagnostic tracing
+        /// Configures XAML diagnostic tracing for debugging
         /// </summary>
         private void ConfigureXamlDiagnostics()
         {
-            // Enable XAML diagnostic tracing
             PresentationTraceSources.Refresh();
             PresentationTraceSources.DataBindingSource.Listeners.Add(
                 new XamlTraceListener());
@@ -327,20 +348,16 @@ namespace OfflinePOS.Admin
         }
 
         /// <summary>
-        /// Ensures all required resources are loaded
+        /// Ensures all required WPF resources are loaded properly
         /// </summary>
         private void EnsureResourcesLoaded()
         {
             try
             {
-                // Try to load the common resources
                 var resourceUri = new Uri("pack://application:,,,/OfflinePOS.Core;component/Styles/CommonStyles.xaml", UriKind.Absolute);
                 var resourceDict = new ResourceDictionary { Source = resourceUri };
-
-                // Add to the application resources if loaded successfully
                 Application.Current.Resources.MergedDictionaries.Add(resourceDict);
 
-                // Load converter resources
                 var converterResourceUri = new Uri("pack://application:,,,/OfflinePOS.Core;component/Converters/ConverterResources.xaml", UriKind.Absolute);
                 var converterResourceDict = new ResourceDictionary { Source = converterResourceUri };
                 Application.Current.Resources.MergedDictionaries.Add(converterResourceDict);
@@ -350,7 +367,6 @@ namespace OfflinePOS.Admin
             catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "Failed to load common resources. UI might be affected.");
-                // Continue application execution despite resource loading issues
             }
         }
 
@@ -364,13 +380,13 @@ namespace OfflinePOS.Admin
         }
 
         /// <summary>
-        /// Shows the main application window after successful login
+        /// Shows the main application window after successful authentication
         /// </summary>
         private void ShowMainWindow()
         {
             try
             {
-                // Close all windows (login window)
+                // Close all existing windows
                 foreach (Window window in Current.Windows)
                 {
                     if (window is LoginView)
@@ -383,19 +399,13 @@ namespace OfflinePOS.Admin
                 var dbContext = _serviceProvider.GetRequiredService<ApplicationDbContext>();
                 dbContext.CurrentUserId = _currentUser.Id;
 
-                // Create and show main window with the current user and service provider
                 _logger.LogInformation($"Creating main window for user: {_currentUser.Username}");
 
-                // Create the main window
+                // Create and configure main window
                 var mainWindow = new MainWindow(_currentUser, _serviceProvider);
-
-                // CRITICAL: Set as application's main window
                 Application.Current.MainWindow = mainWindow;
-
-                // Add a strong reference to prevent GC and inadvertent collection
                 Current.Properties["MainWindow"] = mainWindow;
 
-                // Show the window
                 mainWindow.Show();
 
                 _logger.LogInformation($"Main window opened for user: {_currentUser.Username}");

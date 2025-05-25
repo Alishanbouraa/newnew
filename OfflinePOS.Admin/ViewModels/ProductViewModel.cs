@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿// File: OfflinePOS.Admin/ViewModels/ProductViewModel.cs
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OfflinePOS.Admin.Views;
 using OfflinePOS.Core.Models;
@@ -15,12 +16,10 @@ using System.Windows.Input;
 namespace OfflinePOS.Admin.ViewModels
 {
     /// <summary>
-    /// ViewModel for product management
+    /// ViewModel for product management with proper service scoping to prevent DbContext concurrency issues
     /// </summary>
     public class ProductViewModel : InventoryViewModelBase
     {
-        private readonly ICategoryService _categoryService;
-        private readonly ISupplierService _supplierService;
         private readonly IServiceProvider _serviceProvider;
         private Product _selectedProduct;
         private Category _selectedCategory;
@@ -45,7 +44,6 @@ namespace OfflinePOS.Admin.ViewModels
             {
                 if (SetProperty(ref _selectedCategory, value))
                 {
-                    // Refresh products when category changes
                     SearchProducts(null);
                 }
             }
@@ -59,6 +57,8 @@ namespace OfflinePOS.Admin.ViewModels
             get => _categories;
             set => SetProperty(ref _categories, value);
         }
+
+        #region Commands
 
         /// <summary>
         /// Command for adding a new product
@@ -90,6 +90,8 @@ namespace OfflinePOS.Admin.ViewModels
         /// </summary>
         public ICommand ImportExportCommand { get; }
 
+        #endregion
+
         /// <summary>
         /// Initializes a new instance of the ProductViewModel class
         /// </summary>
@@ -110,8 +112,6 @@ namespace OfflinePOS.Admin.ViewModels
             IServiceProvider serviceProvider)
             : base(productService, stockService, logger, currentUser)
         {
-            _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
-            _supplierService = supplierService ?? throw new ArgumentNullException(nameof(supplierService));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
             // Initialize collections
@@ -127,7 +127,7 @@ namespace OfflinePOS.Admin.ViewModels
         }
 
         /// <summary>
-        /// Loads data from repositories
+        /// Loads data from repositories using proper service scoping
         /// </summary>
         /// <returns>Task representing the asynchronous operation</returns>
         public override async Task LoadDataAsync()
@@ -137,7 +137,7 @@ namespace OfflinePOS.Admin.ViewModels
         }
 
         /// <summary>
-        /// Loads the list of categories
+        /// Loads categories using a dedicated service scope
         /// </summary>
         private async Task LoadCategories()
         {
@@ -146,22 +146,23 @@ namespace OfflinePOS.Admin.ViewModels
                 IsBusy = true;
                 StatusMessage = "Loading categories...";
 
-                var categories = await _categoryService.GetCategoriesByTypeAsync("Product");
-
-                Categories.Clear();
-
-                // Add "All Categories" option
-                Categories.Add(new Category { Id = 0, Name = "All Categories" });
-
-                foreach (var category in categories)
+                // Create a dedicated service scope for category loading
+                using (var scope = _serviceProvider.CreateScope())
                 {
-                    Categories.Add(category);
+                    var categoryService = scope.ServiceProvider.GetRequiredService<ICategoryService>();
+                    var categories = await categoryService.GetCategoriesByTypeAsync("Product");
+
+                    Categories.Clear();
+                    Categories.Add(new Category { Id = 0, Name = "All Categories" });
+
+                    foreach (var category in categories)
+                    {
+                        Categories.Add(category);
+                    }
+
+                    SelectedCategory = Categories.First();
+                    StatusMessage = "Categories loaded";
                 }
-
-                // Select "All Categories" by default
-                SelectedCategory = Categories.First();
-
-                StatusMessage = "Categories loaded";
             }
             catch (Exception ex)
             {
@@ -175,7 +176,7 @@ namespace OfflinePOS.Admin.ViewModels
         }
 
         /// <summary>
-        /// Overrides the search products method to include category filtering
+        /// Searches products with category filtering using proper service scoping
         /// </summary>
         /// <param name="parameter">Command parameter</param>
         protected override async void SearchProducts(object parameter)
@@ -185,43 +186,44 @@ namespace OfflinePOS.Admin.ViewModels
                 IsBusy = true;
                 StatusMessage = "Searching products...";
 
-                IEnumerable<Product> products;
-
-                if (SelectedCategory != null && SelectedCategory.Id > 0)
+                // Create a dedicated service scope for product search
+                using (var scope = _serviceProvider.CreateScope())
                 {
-                    // Filter by category and search text
-                    if (string.IsNullOrWhiteSpace(SearchText))
+                    var productService = scope.ServiceProvider.GetRequiredService<IProductService>();
+                    IEnumerable<Product> products;
+
+                    if (SelectedCategory != null && SelectedCategory.Id > 0)
                     {
-                        products = await _productService.GetProductsByCategoryAsync(SelectedCategory.Id);
+                        if (string.IsNullOrWhiteSpace(SearchText))
+                        {
+                            products = await productService.GetProductsByCategoryAsync(SelectedCategory.Id);
+                        }
+                        else
+                        {
+                            var searchResults = await productService.SearchProductsAsync(SearchText);
+                            products = searchResults.Where(p => p.CategoryId == SelectedCategory.Id);
+                        }
                     }
                     else
                     {
-                        // Get all products matching the search text
-                        var searchResults = await _productService.SearchProductsAsync(SearchText);
-                        // Filter by category
-                        products = searchResults.Where(p => p.CategoryId == SelectedCategory.Id);
+                        if (string.IsNullOrWhiteSpace(SearchText))
+                        {
+                            products = await productService.GetAllProductsAsync();
+                        }
+                        else
+                        {
+                            products = await productService.SearchProductsAsync(SearchText);
+                        }
                     }
-                }
-                else
-                {
-                    // No category filter, just search by text
-                    if (string.IsNullOrWhiteSpace(SearchText))
-                    {
-                        products = await _productService.GetAllProductsAsync();
-                    }
-                    else
-                    {
-                        products = await _productService.SearchProductsAsync(SearchText);
-                    }
-                }
 
-                Products.Clear();
-                foreach (var product in products)
-                {
-                    Products.Add(product);
-                }
+                    Products.Clear();
+                    foreach (var product in products)
+                    {
+                        Products.Add(product);
+                    }
 
-                StatusMessage = $"Found {Products.Count} products";
+                    StatusMessage = $"Found {Products.Count} products";
+                }
             }
             catch (Exception ex)
             {
@@ -245,24 +247,12 @@ namespace OfflinePOS.Admin.ViewModels
                 IsBusy = true;
                 StatusMessage = "Preparing to add product...";
 
-                // Create a new supplier object
-                var supplier = new Supplier
-                {
-                    IsActive = true,
-                    CreatedById = _currentUser.Id,
-                    CreatedDate = DateTime.Now,
-                    CurrentBalance = 0
-                };
+                // Create dialog view model using the factory
+                var dialogViewModelFactory = _serviceProvider.GetRequiredService<Func<Product, ProductDialogViewModel>>();
+                var dialogViewModel = dialogViewModelFactory(null);
 
-                // Create dialog view model
-                var dialogViewModel = new ProductDialogViewModel(
-                    _productService,
-                    _categoryService,
-                    _supplierService,
-                    _serviceProvider.GetService<ISupplierInvoiceService>(), // Add ISupplierInvoiceService
-                    (ILogger<ProductDialogViewModel>)_serviceProvider.GetService(typeof(ILogger<ProductDialogViewModel>)),
-                    _currentUser,
-                    null);  // Null indicates a new product
+                // Load data for the dialog
+                await dialogViewModel.LoadDataAsync();
 
                 // Create and show the dialog
                 var dialog = new ProductDialogView(dialogViewModel)
@@ -272,7 +262,6 @@ namespace OfflinePOS.Admin.ViewModels
 
                 var result = dialog.ShowDialog();
 
-                // Refresh suppliers if dialog was successful
                 if (result == true)
                 {
                     await LoadDataAsync();
@@ -305,23 +294,27 @@ namespace OfflinePOS.Admin.ViewModels
                 IsBusy = true;
                 StatusMessage = "Loading product details...";
 
-                // Get the complete product with navigation properties
-                var completeProduct = await _productService.GetProductByIdAsync(product.Id);
-                if (completeProduct == null)
+                Product completeProduct = null;
+
+                // Get the complete product using a dedicated service scope
+                using (var scope = _serviceProvider.CreateScope())
                 {
-                    StatusMessage = "Product not found";
-                    return;
+                    var productService = scope.ServiceProvider.GetRequiredService<IProductService>();
+                    completeProduct = await productService.GetProductByIdAsync(product.Id);
+
+                    if (completeProduct == null)
+                    {
+                        StatusMessage = "Product not found";
+                        return;
+                    }
                 }
 
-                // Create the dialog view model
-                var dialogViewModel = new ProductDialogViewModel(
-                    _productService,
-                    _categoryService,
-                    _supplierService,
-                    _serviceProvider.GetService<ISupplierInvoiceService>(), // Add ISupplierInvoiceService
-                    (ILogger<ProductDialogViewModel>)_serviceProvider.GetService(typeof(ILogger<ProductDialogViewModel>)),
-                    _currentUser,
-                    completeProduct);
+                // Create dialog view model using the factory
+                var dialogViewModelFactory = _serviceProvider.GetRequiredService<Func<Product, ProductDialogViewModel>>();
+                var dialogViewModel = dialogViewModelFactory(completeProduct);
+
+                // Load data for the dialog
+                await dialogViewModel.LoadDataAsync();
 
                 // Create and show the dialog
                 var dialog = new ProductDialogView(dialogViewModel)
@@ -331,7 +324,6 @@ namespace OfflinePOS.Admin.ViewModels
 
                 var result = dialog.ShowDialog();
 
-                // Refresh products if dialog was successful
                 if (result == true)
                 {
                     SearchProducts(null);
@@ -348,7 +340,6 @@ namespace OfflinePOS.Admin.ViewModels
                 IsBusy = false;
             }
         }
-
 
         /// <summary>
         /// Deletes the selected product after confirmation
@@ -370,7 +361,14 @@ namespace OfflinePOS.Admin.ViewModels
                     IsBusy = true;
                     StatusMessage = "Deleting product...";
 
-                    bool success = await _productService.DeleteProductAsync(product.Id);
+                    bool success = false;
+
+                    // Delete product using a dedicated service scope
+                    using (var scope = _serviceProvider.CreateScope())
+                    {
+                        var productService = scope.ServiceProvider.GetRequiredService<IProductService>();
+                        success = await productService.DeleteProductAsync(product.Id);
+                    }
 
                     if (success)
                     {
@@ -395,34 +393,14 @@ namespace OfflinePOS.Admin.ViewModels
         }
 
         /// <summary>
-        /// Opens the Stock Management view
+        /// Navigates to the Stock Management view
         /// </summary>
         /// <param name="parameter">Command parameter</param>
         private void ManageStock(object parameter)
         {
             try
             {
-                // Get the StockManagementView from the service provider
-                var stockView = _serviceProvider.GetService(typeof(StockManagementView)) as UserControl;
-                if (stockView != null)
-                {
-                    // Get the parent window's content control or frame
-                    var mainWindow = Application.Current.MainWindow;
-                    if (mainWindow != null)
-                    {
-                        // Find the content control by name
-                        var contentControl = mainWindow.FindName("MainContent") as ContentControl;
-                        if (contentControl != null)
-                        {
-                            contentControl.Content = stockView;
-                            return;
-                        }
-                    }
-                }
-
-                // Fallback if any of the above fails
-                MessageBox.Show("Navigation to Stock Management view not implemented yet.",
-                               "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
+                NavigateToView<StockManagementView>("Stock Management");
             }
             catch (Exception ex)
             {
@@ -432,34 +410,14 @@ namespace OfflinePOS.Admin.ViewModels
         }
 
         /// <summary>
-        /// Opens the Barcode Management view
+        /// Navigates to the Barcode Management view
         /// </summary>
         /// <param name="parameter">Command parameter</param>
         private void ManageBarcodes(object parameter)
         {
             try
             {
-                // Get the BarcodeManagementView from the service provider
-                var barcodeView = _serviceProvider.GetService(typeof(BarcodeManagementView)) as UserControl;
-                if (barcodeView != null)
-                {
-                    // Get the parent window's content control or frame
-                    var mainWindow = Application.Current.MainWindow;
-                    if (mainWindow != null)
-                    {
-                        // Find the content control by name
-                        var contentControl = mainWindow.FindName("MainContent") as ContentControl;
-                        if (contentControl != null)
-                        {
-                            contentControl.Content = barcodeView;
-                            return;
-                        }
-                    }
-                }
-
-                // Fallback if any of the above fails
-                MessageBox.Show("Navigation to Barcode Management view not implemented yet.",
-                               "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
+                NavigateToView<BarcodeManagementView>("Barcode Management");
             }
             catch (Exception ex)
             {
@@ -469,40 +427,46 @@ namespace OfflinePOS.Admin.ViewModels
         }
 
         /// <summary>
-        /// Opens the Import/Export view
+        /// Navigates to the Import/Export view
         /// </summary>
         /// <param name="parameter">Command parameter</param>
         private void ImportExport(object parameter)
         {
             try
             {
-                // Get the ProductImportExportView from the service provider
-                var importExportView = _serviceProvider.GetService(typeof(ProductImportExportView)) as UserControl;
-                if (importExportView != null)
-                {
-                    // Get the parent window's content control or frame
-                    var mainWindow = Application.Current.MainWindow;
-                    if (mainWindow != null)
-                    {
-                        // Find the content control by name
-                        var contentControl = mainWindow.FindName("MainContent") as ContentControl;
-                        if (contentControl != null)
-                        {
-                            contentControl.Content = importExportView;
-                            return;
-                        }
-                    }
-                }
-
-                // Fallback if any of the above fails
-                MessageBox.Show("Navigation to Import/Export view not implemented yet.",
-                               "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
+                NavigateToView<ProductImportExportView>("Import/Export");
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error navigating to Import/Export: {ex.Message}";
                 _logger.LogError(ex, "Error navigating to Import/Export");
             }
+        }
+
+        /// <summary>
+        /// Generic method to navigate to a view
+        /// </summary>
+        /// <typeparam name="T">Type of view to navigate to</typeparam>
+        /// <param name="viewName">Name of the view for error messages</param>
+        private void NavigateToView<T>(string viewName) where T : UserControl
+        {
+            var view = _serviceProvider.GetService<T>();
+            if (view != null)
+            {
+                var mainWindow = Application.Current.MainWindow;
+                if (mainWindow != null)
+                {
+                    var contentControl = mainWindow.FindName("MainContent") as ContentControl;
+                    if (contentControl != null)
+                    {
+                        contentControl.Content = view;
+                        return;
+                    }
+                }
+            }
+
+            MessageBox.Show($"Navigation to {viewName} view not implemented yet.",
+                           "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         /// <summary>

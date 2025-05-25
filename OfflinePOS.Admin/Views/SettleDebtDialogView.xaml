@@ -7,7 +7,7 @@
         xmlns:local="clr-namespace:OfflinePOS.Admin.Views"
         mc:Ignorable="d"
         Title="Settle Customer Debt" 
-        Width="400" Height="600" 
+        Width="400" Height="700" 
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="#F5F5F5">

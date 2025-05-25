@@ -45,12 +45,7 @@ namespace OfflinePOS.Core.Repositories
         /// <param name="entity">Entity to update</param>
         /// <returns>True if updated, false otherwise</returns>
         Task<bool> UpdateAsync(T entity);
-
-        /// <summary>
-        /// Deletes an entity by ID
-        /// </summary>
-        /// <param name="id">ID of entity to delete</param>
-        /// <returns>True if deleted, false otherwise</returns>
+     
         Task<bool> DeleteAsync(int id);
 
         /// <summary>

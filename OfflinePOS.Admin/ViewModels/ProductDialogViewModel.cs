@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿// File: OfflinePOS.Admin/ViewModels/ProductDialogViewModel.cs
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using OfflinePOS.Core.Models;
 using OfflinePOS.Core.MVVM;
 using OfflinePOS.Core.Services;
@@ -7,22 +9,19 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
 
 namespace OfflinePOS.Admin.ViewModels
 {
     /// <summary>
-    /// ViewModel for the Product Dialog (Add/Edit)
+    /// ViewModel for the Product Dialog (Add/Edit) with proper service scoping to prevent DbContext concurrency issues
     /// </summary>
     public class ProductDialogViewModel : ViewModelCommandBase
     {
-        private readonly IProductService _productService;
-        private readonly ICategoryService _categoryService;
-        private readonly ISupplierService _supplierService;
-        private readonly ISupplierInvoiceService _supplierInvoiceService;
+        private readonly IServiceProvider _serviceProvider;
         private readonly User _currentUser;
 
+        // UI state properties
         private Product _product;
         private Category _selectedCategory;
         private Supplier _selectedSupplier;
@@ -42,6 +41,8 @@ namespace OfflinePOS.Admin.ViewModels
         /// Event raised when the dialog should be closed
         /// </summary>
         public event EventHandler<bool> CloseRequested;
+
+        #region Properties
 
         /// <summary>
         /// Product being added or edited
@@ -82,13 +83,11 @@ namespace OfflinePOS.Admin.ViewModels
                         _product.SupplierId = value?.Id > 0 ? value.Id : null;
                     }
 
-                    // Set the flag that enables/disables the invoice dropdown
                     HasSelectedSupplier = value != null && value.Id > 0;
 
-                    // Clear and reload supplier invoices when supplier changes
                     if (HasSelectedSupplier)
                     {
-                        LoadSupplierInvoices(null);
+                        _ = LoadSupplierInvoicesAsync();
                     }
                     else
                     {
@@ -208,6 +207,10 @@ namespace OfflinePOS.Admin.ViewModels
         /// </summary>
         public ObservableCollection<Supplier> Suppliers { get; } = new ObservableCollection<Supplier>();
 
+        #endregion
+
+        #region Commands
+
         /// <summary>
         /// Command for saving the product
         /// </summary>
@@ -233,42 +236,49 @@ namespace OfflinePOS.Admin.ViewModels
         /// </summary>
         public ICommand RefreshInvoicesCommand { get; }
 
+        #endregion
+
         /// <summary>
         /// Initializes a new instance of the ProductDialogViewModel class
         /// </summary>
-        /// <param name="productService">Product service</param>
-        /// <param name="categoryService">Category service</param>
-        /// <param name="supplierService">Supplier service</param>
-        /// <param name="supplierInvoiceService">Supplier invoice service</param>
+        /// <param name="serviceProvider">Service provider for creating scoped services</param>
         /// <param name="logger">Logger</param>
         /// <param name="currentUser">Current user</param>
         /// <param name="product">Product to edit, or null for a new product</param>
         public ProductDialogViewModel(
-            IProductService productService,
-            ICategoryService categoryService,
-            ISupplierService supplierService,
-            ISupplierInvoiceService supplierInvoiceService,
+            IServiceProvider serviceProvider,
             ILogger<ProductDialogViewModel> logger,
             User currentUser,
             Product product = null)
             : base(logger)
         {
-            _productService = productService ?? throw new ArgumentNullException(nameof(productService));
-            _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
-            _supplierService = supplierService ?? throw new ArgumentNullException(nameof(supplierService));
-            _supplierInvoiceService = supplierInvoiceService ?? throw new ArgumentNullException(nameof(supplierInvoiceService));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
 
             // Determine if adding or editing
             IsNewProduct = product == null;
-
-            // Set window title
             WindowTitle = IsNewProduct ? "Add New Product" : "Edit Product";
 
             // Initialize collections
             SupplierInvoices = new ObservableCollection<SupplierInvoice>();
 
             // Initialize product
+            InitializeProduct(product);
+
+            // Initialize commands
+            SaveCommand = CreateCommand(SaveProductAsync, CanSaveProduct);
+            CancelCommand = CreateCommand(Cancel);
+            GenerateBoxBarcodeCommand = CreateCommand(GenerateBoxBarcode);
+            GenerateItemBarcodeCommand = CreateCommand(GenerateItemBarcode);
+            RefreshInvoicesCommand = CreateCommand(LoadSupplierInvoicesCommand, CanLoadSupplierInvoices);
+        }
+
+        /// <summary>
+        /// Initializes the product instance
+        /// </summary>
+        /// <param name="product">Existing product or null for new product</param>
+        private void InitializeProduct(Product product)
+        {
             if (IsNewProduct)
             {
                 Product = new Product
@@ -276,26 +286,18 @@ namespace OfflinePOS.Admin.ViewModels
                     ItemsPerBox = 1,
                     TrackInventory = true,
                     AllowNegativeInventory = false,
-                    CreatedById = _currentUser.Id
-                    // Description and Dimensions are now optional, so we don't need to set defaults
+                    CreatedById = _currentUser.Id,
+                    SupplierProductCode = string.Empty
                 };
             }
             else
             {
-                // Make a copy of the product to avoid modifying the original until Save
                 Product = CloneProduct(product);
             }
-
-            // Initialize commands
-            SaveCommand = CreateCommand(SaveProduct, CanSaveProduct);
-            CancelCommand = CreateCommand(Cancel);
-            GenerateBoxBarcodeCommand = CreateCommand(GenerateBoxBarcode);
-            GenerateItemBarcodeCommand = CreateCommand(GenerateItemBarcode);
-            RefreshInvoicesCommand = CreateCommand(LoadSupplierInvoices, CanLoadSupplierInvoices);
         }
 
         /// <summary>
-        /// Loads categories, suppliers, and other necessary data
+        /// Loads categories, suppliers, and other necessary data using proper service scoping
         /// </summary>
         /// <returns>Task representing the asynchronous operation</returns>
         public async Task LoadDataAsync()
@@ -305,57 +307,20 @@ namespace OfflinePOS.Admin.ViewModels
                 IsBusy = true;
                 StatusMessage = "Loading data...";
 
-                // Load categories
-                var categories = await _categoryService.GetCategoriesByTypeAsync("Product");
-                Categories.Clear();
-                foreach (var category in categories)
+                // Create a dedicated service scope for this operation
+                using (var scope = _serviceProvider.CreateScope())
                 {
-                    Categories.Add(category);
-                }
+                    var categoryService = scope.ServiceProvider.GetRequiredService<ICategoryService>();
+                    var supplierService = scope.ServiceProvider.GetRequiredService<ISupplierService>();
 
-                // Load suppliers
-                var suppliers = await _supplierService.GetAllSuppliersAsync();
-                Suppliers.Clear();
+                    // Load categories
+                    await LoadCategoriesAsync(categoryService);
 
-                // Add a null option for supplier
-                Suppliers.Add(new Supplier { Id = 0, Name = "-- None --" });
+                    // Load suppliers
+                    await LoadSuppliersAsync(supplierService);
 
-                foreach (var supplier in suppliers)
-                {
-                    Suppliers.Add(supplier);
-                }
-
-                // Set selected category and supplier based on product
-                if (Product.CategoryId > 0)
-                {
-                    SelectedCategory = Categories.FirstOrDefault(c => c.Id == Product.CategoryId);
-                }
-                else if (Categories.Count > 0)
-                {
-                    SelectedCategory = Categories.First();
-                }
-
-                if (Product.SupplierId.HasValue && Product.SupplierId.Value > 0)
-                {
-                    SelectedSupplier = Suppliers.FirstOrDefault(s => s.Id == Product.SupplierId.Value);
-                    HasSelectedSupplier = true;
-
-                    // Load supplier invoices if supplier is selected
-                    if (HasSelectedSupplier)
-                    {
-                        await LoadSupplierInvoicesAsync();
-
-                        // Select existing supplier invoice if available
-                        if (Product.SupplierInvoiceId.HasValue)
-                        {
-                            SelectedSupplierInvoice = SupplierInvoices.FirstOrDefault(i => i.Id == Product.SupplierInvoiceId.Value);
-                        }
-                    }
-                }
-                else
-                {
-                    SelectedSupplier = Suppliers.First(); // The "None" option
-                    HasSelectedSupplier = false;
+                    // Set selected values based on product data
+                    SetSelectedValues();
                 }
             }
             catch (Exception ex)
@@ -371,53 +336,120 @@ namespace OfflinePOS.Admin.ViewModels
         }
 
         /// <summary>
-        /// Loads supplier invoices for the selected supplier
+        /// Loads categories from the database
         /// </summary>
-        /// <param name="parameter">Command parameter</param>
-        private async void LoadSupplierInvoices(object parameter)
+        /// <param name="categoryService">Category service instance</param>
+        private async Task LoadCategoriesAsync(ICategoryService categoryService)
         {
-            if (!HasSelectedSupplier)
-                return;
-
-            await LoadSupplierInvoicesAsync();
+            var categories = await categoryService.GetCategoriesByTypeAsync("Product");
+            Categories.Clear();
+            foreach (var category in categories)
+            {
+                Categories.Add(category);
+            }
         }
 
         /// <summary>
-        /// Asynchronously loads supplier invoices
+        /// Loads suppliers from the database
+        /// </summary>
+        /// <param name="supplierService">Supplier service instance</param>
+        private async Task LoadSuppliersAsync(ISupplierService supplierService)
+        {
+            var suppliers = await supplierService.GetAllSuppliersAsync();
+            Suppliers.Clear();
+
+            // Add a null option for supplier
+            Suppliers.Add(new Supplier { Id = 0, Name = "-- None --" });
+
+            foreach (var supplier in suppliers)
+            {
+                Suppliers.Add(supplier);
+            }
+        }
+
+        /// <summary>
+        /// Sets selected category and supplier based on product data
+        /// </summary>
+        private void SetSelectedValues()
+        {
+            // Set selected category
+            if (Product.CategoryId > 0)
+            {
+                SelectedCategory = Categories.FirstOrDefault(c => c.Id == Product.CategoryId);
+            }
+            else if (Categories.Count > 0)
+            {
+                SelectedCategory = Categories.First();
+                if (Product != null)
+                {
+                    Product.CategoryId = SelectedCategory.Id;
+                }
+            }
+
+            // Set selected supplier
+            if (Product.SupplierId.HasValue && Product.SupplierId.Value > 0)
+            {
+                SelectedSupplier = Suppliers.FirstOrDefault(s => s.Id == Product.SupplierId.Value);
+                HasSelectedSupplier = true;
+
+                // Load supplier invoices if supplier is selected
+                if (HasSelectedSupplier)
+                {
+                    _ = LoadSupplierInvoicesAsync();
+                }
+            }
+            else
+            {
+                SelectedSupplier = Suppliers.FirstOrDefault(s => s.Id == 0); // The "None" option
+                HasSelectedSupplier = false;
+            }
+        }
+
+        /// <summary>
+        /// Loads supplier invoices for the selected supplier using proper service scoping
         /// </summary>
         private async Task LoadSupplierInvoicesAsync()
         {
+            if (!HasSelectedSupplier || SelectedSupplier?.Id <= 0)
+                return;
+
             try
             {
                 IsBusy = true;
                 StatusMessage = "Loading supplier invoices...";
 
-                // Get invoices for the selected supplier
-                var invoices = await _supplierInvoiceService.GetInvoicesBySupplierAsync(SelectedSupplier.Id);
-
-                // Filter to only pending/partially paid invoices
-                var activeInvoices = invoices.Where(i =>
-                    i.Status == "Pending" || i.Status == "PartiallyPaid");
-
-                SupplierInvoices.Clear();
-                foreach (var invoice in activeInvoices)
+                // Create a dedicated service scope for this operation
+                using (var scope = _serviceProvider.CreateScope())
                 {
-                    SupplierInvoices.Add(invoice);
-                }
+                    var supplierInvoiceService = scope.ServiceProvider.GetRequiredService<ISupplierInvoiceService>();
 
-                // If editing a product that has a supplier invoice, select it
-                if (Product?.SupplierInvoiceId != null)
-                {
-                    SelectedSupplierInvoice = SupplierInvoices
-                        .FirstOrDefault(i => i.Id == Product.SupplierInvoiceId);
-                }
+                    // Get invoices for the selected supplier
+                    var invoices = await supplierInvoiceService.GetInvoicesBySupplierAsync(SelectedSupplier.Id);
 
-                StatusMessage = $"Loaded {SupplierInvoices.Count} supplier invoices";
+                    // Filter to only pending/partially paid invoices
+                    var activeInvoices = invoices.Where(i =>
+                        i.Status == "Pending" || i.Status == "PartiallyPaid");
+
+                    SupplierInvoices.Clear();
+                    foreach (var invoice in activeInvoices)
+                    {
+                        SupplierInvoices.Add(invoice);
+                    }
+
+                    // If editing a product that has a supplier invoice, select it
+                    if (Product?.SupplierInvoiceId != null)
+                    {
+                        SelectedSupplierInvoice = SupplierInvoices
+                            .FirstOrDefault(i => i.Id == Product.SupplierInvoiceId);
+                    }
+
+                    StatusMessage = $"Loaded {SupplierInvoices.Count} supplier invoices";
+                }
             }
             catch (Exception ex)
             {
                 ErrorMessage = $"Error loading supplier invoices: {ex.Message}";
-                _logger.LogError(ex, "Error loading supplier invoices for supplier {SupplierId}", SelectedSupplier.Id);
+                _logger.LogError(ex, "Error loading supplier invoices for supplier {SupplierId}", SelectedSupplier?.Id);
             }
             finally
             {
@@ -426,18 +458,19 @@ namespace OfflinePOS.Admin.ViewModels
         }
 
         /// <summary>
-        /// Determines if supplier invoices can be loaded
+        /// Command handler for loading supplier invoices
         /// </summary>
-        private bool CanLoadSupplierInvoices(object parameter)
+        /// <param name="parameter">Command parameter</param>
+        private void LoadSupplierInvoicesCommand(object parameter)
         {
-            return HasSelectedSupplier && !IsBusy;
+            _ = LoadSupplierInvoicesAsync();
         }
 
         /// <summary>
-        /// Saves the product
+        /// Saves the product using proper service scoping to prevent DbContext conflicts
         /// </summary>
         /// <param name="parameter">Command parameter</param>
-        private async void SaveProduct(object parameter)
+        private async void SaveProductAsync(object parameter)
         {
             if (!ValidateProduct())
                 return;
@@ -446,7 +479,7 @@ namespace OfflinePOS.Admin.ViewModels
             {
                 IsBusy = true;
 
-                // Add supplier invoice reference if selected
+                // Set supplier invoice reference if selected
                 if (SelectedSupplierInvoice != null)
                 {
                     Product.SupplierInvoiceId = SelectedSupplierInvoice.Id;
@@ -456,46 +489,32 @@ namespace OfflinePOS.Admin.ViewModels
                     Product.SupplierInvoiceId = null;
                 }
 
-                if (IsNewProduct)
+                // Create a dedicated service scope for the entire save operation
+                using (var scope = _serviceProvider.CreateScope())
                 {
-                    StatusMessage = "Creating product...";
-                    Product.CreatedById = _currentUser.Id;
-                    var createdProduct = await _productService.CreateProductAsync(Product);
+                    var productService = scope.ServiceProvider.GetRequiredService<IProductService>();
 
-                    // Create initial stock if specified
-                    if (Product.TrackInventory && (InitialBoxQuantity > 0 || InitialItemQuantity > 0))
+                    Product createdProduct = null;
+
+                    if (IsNewProduct)
                     {
-                        // Get the stock service and update stock
-                        var stockService = await _productService.GetStockServiceAsync();
-                        if (stockService != null)
+                        StatusMessage = "Creating product...";
+                        Product.CreatedById = _currentUser.Id;
+                        createdProduct = await productService.CreateProductAsync(Product);
+
+                        // Create initial stock within the same scope to avoid DbContext conflicts
+                        if (Product.TrackInventory && (InitialBoxQuantity > 0 || InitialItemQuantity > 0))
                         {
-                            try
-                            {
-                                // Pass the location code with the stock adjustment
-                                await stockService.UpdateStockLevelsAsync(
-                                    createdProduct.Id,
-                                    InitialBoxQuantity,
-                                    InitialItemQuantity,
-                                    "Addition",
-                                    "Initial stock",
-                                    "INIT-STOCK",
-                                    _currentUser.Id,
-                                    LocationCode);
-                            }
-                            catch (Exception ex)
-                            {
-                                ErrorMessage = $"Product created but failed to set initial stock: {ex.Message}";
-                                _logger.LogError(ex, "Error setting initial stock for product {ProductId}", createdProduct.Id);
-                            }
+                            await CreateInitialStock(scope, createdProduct.Id);
                         }
                     }
-                }
-                else
-                {
-                    StatusMessage = "Updating product...";
-                    Product.LastUpdatedById = _currentUser.Id;
-                    Product.LastUpdatedDate = DateTime.Now;
-                    await _productService.UpdateProductAsync(Product);
+                    else
+                    {
+                        StatusMessage = "Updating product...";
+                        Product.LastUpdatedById = _currentUser.Id;
+                        Product.LastUpdatedDate = DateTime.Now;
+                        await productService.UpdateProductAsync(Product);
+                    }
                 }
 
                 // Close the dialog with success
@@ -514,15 +533,41 @@ namespace OfflinePOS.Admin.ViewModels
         }
 
         /// <summary>
-        /// Validates the product data
+        /// Creates initial stock for a new product
+        /// </summary>
+        /// <param name="scope">Service scope</param>
+        /// <param name="productId">Product ID</param>
+        private async Task CreateInitialStock(IServiceScope scope, int productId)
+        {
+            try
+            {
+                var stockService = scope.ServiceProvider.GetRequiredService<IStockService>();
+
+                await stockService.UpdateStockLevelsAsync(
+                    productId,
+                    InitialBoxQuantity,
+                    InitialItemQuantity,
+                    "Addition",
+                    "Initial stock",
+                    "INIT-STOCK",
+                    _currentUser.Id,
+                    LocationCode);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Product created but failed to set initial stock: {ex.Message}";
+                _logger.LogError(ex, "Error setting initial stock for product {ProductId}", productId);
+            }
+        }
+
+        /// <summary>
+        /// Validates the product data before saving
         /// </summary>
         /// <returns>True if valid, false otherwise</returns>
         private bool ValidateProduct()
         {
-            // Clear previous error
             ErrorMessage = string.Empty;
 
-            // Check required fields
             if (string.IsNullOrWhiteSpace(Product.Name))
             {
                 ErrorMessage = "Product name is required";
@@ -541,7 +586,6 @@ namespace OfflinePOS.Admin.ViewModels
                 return false;
             }
 
-            // Only require location code for new products with inventory tracking
             if (IsNewProduct && Product.TrackInventory && InitialBoxQuantity > 0 && string.IsNullOrWhiteSpace(LocationCode))
             {
                 ErrorMessage = "Location code is required for inventory tracking";
@@ -561,14 +605,13 @@ namespace OfflinePOS.Admin.ViewModels
         }
 
         /// <summary>
-        /// Generates a box barcode for the product
+        /// Generates a unique box barcode for the product
         /// </summary>
         /// <param name="parameter">Command parameter</param>
         private void GenerateBoxBarcode(object parameter)
         {
             try
             {
-                // Generate a unique barcode using the BarcodeUtility
                 string barcode = BarcodeUtility.GenerateEAN13(DateTime.Now.Millisecond);
                 Product.BoxBarcode = barcode;
             }
@@ -580,14 +623,13 @@ namespace OfflinePOS.Admin.ViewModels
         }
 
         /// <summary>
-        /// Generates an item barcode for the product
+        /// Generates a unique item barcode for the product
         /// </summary>
         /// <param name="parameter">Command parameter</param>
         private void GenerateItemBarcode(object parameter)
         {
             try
             {
-                // Generate a unique barcode using the BarcodeUtility
                 string barcode = BarcodeUtility.GenerateEAN13(DateTime.Now.Millisecond + 1000);
                 Product.ItemBarcode = barcode;
             }
@@ -609,7 +651,17 @@ namespace OfflinePOS.Admin.ViewModels
         }
 
         /// <summary>
-        /// Creates a clone of a product to avoid modifying the original
+        /// Determines if supplier invoices can be loaded
+        /// </summary>
+        /// <param name="parameter">Command parameter</param>
+        /// <returns>True if invoices can be loaded, false otherwise</returns>
+        private bool CanLoadSupplierInvoices(object parameter)
+        {
+            return HasSelectedSupplier && !IsBusy;
+        }
+
+        /// <summary>
+        /// Creates a deep clone of a product to avoid modifying the original
         /// </summary>
         /// <param name="source">Source product</param>
         /// <returns>Cloned product</returns>
@@ -635,7 +687,7 @@ namespace OfflinePOS.Admin.ViewModels
                 ItemSalePrice = source.ItemSalePrice,
                 SupplierId = source.SupplierId,
                 SupplierInvoiceId = source.SupplierInvoiceId,
-                SupplierProductCode = source.SupplierProductCode,
+                SupplierProductCode = source.SupplierProductCode ?? string.Empty,
                 MSRP = source.MSRP,
                 TrackInventory = source.TrackInventory,
                 AllowNegativeInventory = source.AllowNegativeInventory,
