@@ -1,4 +1,5 @@
-﻿<Window x:Class="OfflinePOS.Admin.MainWindow"
+﻿<!-- OfflinePOS.Admin/MainWindow.xaml - Enhanced with Inventory Management Navigation -->
+<Window x:Class="OfflinePOS.Admin.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -6,7 +7,7 @@
         xmlns:local="clr-namespace:OfflinePOS.Admin"
         xmlns:converters="clr-namespace:OfflinePOS.Core.Converters;assembly=OfflinePOS.Core"
         mc:Ignorable="d"
-        Title="POS Admin System" Height="768" Width="1024" 
+        Title="POS Admin System - Enhanced Inventory Management" Height="768" Width="1024" 
         WindowStartupLocation="CenterScreen"
         Loaded="MainWindow_Loaded"
         ContentRendered="MainWindow_ContentRendered"
@@ -27,29 +28,35 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="250"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Navigation Menu -->
+        <!-- Enhanced Navigation Menu -->
         <Border Grid.Column="0" Background="#2c3e50">
             <StackPanel>
-                <TextBlock Text="POS ADMIN" 
+                <TextBlock Text="📦 POS ADMIN" 
                            Foreground="White" 
-                           FontSize="20" 
+                           FontSize="18" 
                            FontWeight="Bold" 
-                           Margin="20,30,20,30" 
+                           Margin="20,25,20,10" 
                            HorizontalAlignment="Center"/>
 
-                <!-- Navigation Items -->
+                <TextBlock Text="Inventory Management System" 
+                           Foreground="#95a5a6" 
+                           FontSize="11" 
+                           Margin="20,0,20,25" 
+                           HorizontalAlignment="Center"/>
+
+                <!-- Navigation Items with Enhanced Structure -->
                 <ListBox x:Name="NavigationListBox" 
                          Background="Transparent" 
                          BorderThickness="0" 
-                         Margin="0,20,0,0"
+                         Margin="0,10,0,0"
                          SelectionChanged="NavigationListBox_SelectionChanged">
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
-                            <Setter Property="Height" Value="50"/>
+                            <Setter Property="Height" Value="45"/>
                             <Setter Property="Padding" Value="20,0"/>
                             <Setter Property="Foreground" Value="White"/>
                             <Setter Property="Background" Value="Transparent"/>
@@ -77,22 +84,112 @@
                         </Style>
                     </ListBox.ItemContainerStyle>
 
-                    <!-- Menu Items -->
-                    <ListBoxItem>Dashboard</ListBoxItem>
-                    <ListBoxItem>Products</ListBoxItem>
-                    <ListBoxItem>Categories</ListBoxItem>
-                    <ListBoxItem>Suppliers</ListBoxItem>
-                    <ListBoxItem>Customers</ListBoxItem>
-                    <ListBoxItem>Transactions</ListBoxItem>
-                    <ListBoxItem>Employees</ListBoxItem>
-                    <ListBoxItem>Reports</ListBoxItem>
-                    <ListBoxItem>Settings</ListBoxItem>
+                    <!-- Enhanced Menu Items with Icons -->
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📊" FontSize="16" Margin="0,0,10,0"/>
+                            <TextBlock Text="Dashboard" FontSize="14"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <!-- NEW: Inventory Management Section -->
+                    <Separator Background="#34495e" Margin="10,15,10,5"/>
+                    <TextBlock Text="INVENTORY MANAGEMENT" Foreground="#7f8c8d" FontSize="10" FontWeight="Bold" Margin="20,5,20,10"/>
+
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📦" FontSize="16" Margin="0,0,10,0"/>
+                            <TextBlock Text="Inventory Management" FontSize="14"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🛍️" FontSize="16" Margin="0,0,10,0"/>
+                            <TextBlock Text="Product Catalog" FontSize="14"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📋" FontSize="16" Margin="0,0,10,0"/>
+                            <TextBlock Text="Stock Management" FontSize="14"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <!-- Product Management Section -->
+                    <Separator Background="#34495e" Margin="10,15,10,5"/>
+                    <TextBlock Text="PRODUCT MANAGEMENT" Foreground="#7f8c8d" FontSize="10" FontWeight="Bold" Margin="20,5,20,10"/>
+
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🏷️" FontSize="16" Margin="0,0,10,0"/>
+                            <TextBlock Text="Products" FontSize="14"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📂" FontSize="16" Margin="0,0,10,0"/>
+                            <TextBlock Text="Categories" FontSize="14"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <!-- Business Management Section -->
+                    <Separator Background="#34495e" Margin="10,15,10,5"/>
+                    <TextBlock Text="BUSINESS MANAGEMENT" Foreground="#7f8c8d" FontSize="10" FontWeight="Bold" Margin="20,5,20,10"/>
+
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🏭" FontSize="16" Margin="0,0,10,0"/>
+                            <TextBlock Text="Suppliers" FontSize="14"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="👥" FontSize="16" Margin="0,0,10,0"/>
+                            <TextBlock Text="Customers" FontSize="14"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="💳" FontSize="16" Margin="0,0,10,0"/>
+                            <TextBlock Text="Transactions" FontSize="14"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <!-- System Management Section -->
+                    <Separator Background="#34495e" Margin="10,15,10,5"/>
+                    <TextBlock Text="SYSTEM" Foreground="#7f8c8d" FontSize="10" FontWeight="Bold" Margin="20,5,20,10"/>
+
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="👤" FontSize="16" Margin="0,0,10,0"/>
+                            <TextBlock Text="Employees" FontSize="14"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📈" FontSize="16" Margin="0,0,10,0"/>
+                            <TextBlock Text="Reports" FontSize="14"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚙️" FontSize="16" Margin="0,0,10,0"/>
+                            <TextBlock Text="Settings" FontSize="14"/>
+                        </StackPanel>
+                    </ListBoxItem>
                 </ListBox>
 
-                <!-- User Info and Logout -->
+                <!-- Enhanced User Info and Logout -->
                 <Border BorderThickness="0,1,0,0" 
                         BorderBrush="#34495e" 
-                        Margin="0,30,0,0" 
+                        Margin="0,25,0,0" 
                         Padding="20,20">
                     <StackPanel>
                         <TextBlock x:Name="UserNameTextBlock" 
@@ -101,51 +198,144 @@
                                    FontWeight="SemiBold"/>
                         <TextBlock Text="Administrator" 
                                    Foreground="#7f8c8d" 
-                                   Margin="0,5,0,0"/>
-                        <Button Content="Logout" 
-                                Background="Transparent" 
-                                BorderThickness="0" 
-                                Foreground="#e74c3c" 
-                                HorizontalAlignment="Left" 
-                                Margin="0,10,0,0" 
-                                Click="LogoutButton_Click"/>
+                                   Margin="0,3,0,0"/>
+
+                        <!-- Quick Actions -->
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="👤" ToolTip="Profile"
+                                    Background="Transparent" 
+                                    BorderThickness="0" 
+                                    Foreground="#95a5a6" 
+                                    Width="25" Height="25"
+                                    Margin="0,0,5,0"/>
+                            <Button Content="🔔" ToolTip="Notifications"
+                                    Background="Transparent" 
+                                    BorderThickness="0" 
+                                    Foreground="#95a5a6" 
+                                    Width="25" Height="25"
+                                    Margin="0,0,5,0"/>
+                            <Button Content="🚪" ToolTip="Logout"
+                                    Background="Transparent" 
+                                    BorderThickness="0" 
+                                    Foreground="#e74c3c" 
+                                    Width="25" Height="25"
+                                    Click="LogoutButton_Click"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>
         </Border>
 
-        <!-- Content Area -->
+        <!-- Enhanced Content Area -->
         <Border Grid.Column="1" Background="#ecf0f1">
             <Grid>
-                <!-- Header -->
+                <!-- Enhanced Header -->
                 <Border Height="60" 
                         VerticalAlignment="Top" 
                         Background="White" 
                         BorderThickness="0,0,0,1" 
                         BorderBrush="#e0e0e0">
                     <Grid>
-                        <TextBlock x:Name="PageTitleTextBlock" 
-                                   Text="Dashboard" 
-                                   FontSize="18" 
-                                   FontWeight="SemiBold" 
-                                   VerticalAlignment="Center" 
-                                   Margin="20,0"/>
-                        <TextBlock Text="Offline POS v1.0" 
-                                   HorizontalAlignment="Right" 
-                                   VerticalAlignment="Center" 
-                                   Margin="0,0,20,0" 
-                                   Foreground="#95a5a6"/>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
+                            <TextBlock x:Name="PageTitleTextBlock" 
+                                       Text="Dashboard" 
+                                       FontSize="20" 
+                                       FontWeight="SemiBold" 
+                                       VerticalAlignment="Center"/>
+                            <Border Background="#e8f5e8" Padding="8,3" Margin="15,0,0,0" CornerRadius="12">
+                                <TextBlock Text="Enhanced System" FontSize="10" Foreground="#27ae60" FontWeight="SemiBold"/>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,0">
+                            <!-- Quick Status Indicators -->
+                            <Border Background="#fff3cd" Padding="6,3" Margin="5,0" CornerRadius="3">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📦" FontSize="12" Margin="0,0,3,0"/>
+                                    <TextBlock Text="Inventory" FontSize="10" Foreground="#856404"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#d4edda" Padding="6,3" Margin="5,0" CornerRadius="3">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="🛍️" FontSize="12" Margin="0,0,3,0"/>
+                                    <TextBlock Text="Catalog" FontSize="10" Foreground="#155724"/>
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock Text="Offline POS v2.0" 
+                                       VerticalAlignment="Center" 
+                                       Margin="15,0,0,0" 
+                                       Foreground="#95a5a6"
+                                       FontSize="12"/>
+                        </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- Main Content -->
+                <!-- Enhanced Main Content -->
                 <ContentControl x:Name="MainContent" 
-                                Margin="0,60,0,0" 
-                                Content="Welcome to POS Admin System" 
-                                HorizontalAlignment="Center" 
-                                VerticalAlignment="Center" 
-                                FontSize="24" 
-                                Foreground="#7f8c8d"/>
+                                Margin="0,60,0,0">
+                    <!-- Enhanced Welcome Content -->
+                    <Grid>
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="🎯" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+                            <TextBlock Text="Welcome to Enhanced POS Admin" FontSize="24" FontWeight="Bold" 
+                                       Foreground="#2c3e50" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Complete Inventory Management System" FontSize="16" 
+                                       Foreground="#7f8c8d" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+
+                            <!-- Quick Start Actions -->
+                            <StackPanel Orientation="Horizontal" Margin="0,30,0,0" HorizontalAlignment="Center">
+                                <Button Content="📦 Manage Inventory" 
+                                        Background="#3498db" Foreground="White"
+                                        Padding="15,10" Margin="5" BorderThickness="0"
+                                        Click="QuickAction_Click" Tag="Inventory Management"/>
+                                <Button Content="🛍️ View Catalog" 
+                                        Background="#27ae60" Foreground="White"
+                                        Padding="15,10" Margin="5" BorderThickness="0"
+                                        Click="QuickAction_Click" Tag="Product Catalog"/>
+                                <Button Content="📋 Check Stock" 
+                                        Background="#f39c12" Foreground="White"
+                                        Padding="15,10" Margin="5" BorderThickness="0"
+                                        Click="QuickAction_Click" Tag="Stock Management"/>
+                            </StackPanel>
+
+                            <!-- System Status -->
+                            <Border Background="#f8f9fa" Padding="20" Margin="0,30,0,0" CornerRadius="8" MaxWidth="600">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                        <TextBlock Text="🔄" FontSize="20" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="System Status" FontSize="12" HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                                        <TextBlock Text="Online" FontSize="11" Foreground="#27ae60" HorizontalAlignment="Center" FontWeight="SemiBold"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                        <TextBlock Text="💾" FontSize="20" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Database" FontSize="12" HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                                        <TextBlock Text="Connected" FontSize="11" Foreground="#27ae60" HorizontalAlignment="Center" FontWeight="SemiBold"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                        <TextBlock Text="📊" FontSize="20" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Features" FontSize="12" HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                                        <TextBlock Text="Enhanced" FontSize="11" Foreground="#3498db" HorizontalAlignment="Center" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </ContentControl>
             </Grid>
         </Border>
     </Grid>

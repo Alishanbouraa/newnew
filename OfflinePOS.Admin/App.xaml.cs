@@ -1,4 +1,4 @@
-﻿// File: OfflinePOS.Admin/App.xaml.cs
+﻿// File: OfflinePOS.Admin/App.xaml.cs - Updated with enhanced inventory management services
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +21,7 @@ using System.Windows;
 namespace OfflinePOS.Admin
 {
     /// <summary>
-    /// Main application class that handles initialization, dependency injection, and application lifecycle
+    /// Enhanced application class with comprehensive inventory management support
     /// </summary>
     public partial class App : Application
     {
@@ -64,13 +64,13 @@ namespace OfflinePOS.Admin
                 EnsureResourcesLoaded();
 
                 // Initialize database before showing the login window
-                _logger.LogInformation("Initializing application...");
+                _logger.LogInformation("Initializing application with enhanced inventory management...");
                 var dbInitializer = _serviceProvider.GetRequiredService<DatabaseInitializer>();
                 await dbInitializer.InitializeDatabaseAsync();
 
                 ShowLoginWindow();
 
-                _logger.LogInformation("Application started successfully");
+                _logger.LogInformation("Application started successfully with inventory management features");
             }
             catch (Exception ex)
             {
@@ -82,7 +82,7 @@ namespace OfflinePOS.Admin
         }
 
         /// <summary>
-        /// Configures application services for dependency injection with proper DbContext scoping
+        /// Configures application services for dependency injection with enhanced inventory management
         /// </summary>
         private void ConfigureServices(IServiceCollection services)
         {
@@ -97,7 +97,7 @@ namespace OfflinePOS.Admin
             // Register configuration
             services.AddSingleton(_configuration);
 
-            // FIXED: Register DbContext with scoped lifetime to prevent concurrency issues
+            // Register DbContext with scoped lifetime to prevent concurrency issues
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(
                     _configuration.GetConnectionString("DefaultConnection"),
@@ -113,13 +113,13 @@ namespace OfflinePOS.Admin
             // Register database initializer
             services.AddTransient<DatabaseInitializer>();
 
-            // FIXED: Register repositories and UoW with scoped lifetime to match DbContext
+            // Register repositories and UoW with scoped lifetime to match DbContext
             services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-            // FIXED: Register core services as scoped to prevent DbContext sharing
+            // Register enhanced core services with inventory management capabilities
             services.AddScoped<IAuthService, AuthService>();
-            services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<IProductService, ProductService>(); // Enhanced with inventory management
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<ISupplierService, SupplierService>();
             services.AddScoped<ISupplierInvoiceService, SupplierInvoiceService>();
@@ -128,22 +128,20 @@ namespace OfflinePOS.Admin
             services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<IDrawerService, DrawerService>();
 
-            // Register SupplierInvoiceDetailsViewModel factory
-            services.AddTransient<Func<SupplierInvoice, Supplier, SupplierInvoiceDetailsViewModel>>(
-                provider => (invoice, supplier) =>
-                    new SupplierInvoiceDetailsViewModel(
-                        provider.GetRequiredService<ISupplierInvoiceService>(),
-                        provider.GetRequiredService<IProductService>(),
-                        provider.GetRequiredService<ILogger<SupplierInvoiceDetailsViewModel>>(),
-                        _currentUser,
-                        invoice,
-                        supplier,
-                        provider));
+            // Register NEW Inventory Management ViewModels
+            services.AddTransient(provider =>
+                new InventoryManagementViewModel(
+                    provider,
+                    provider.GetRequiredService<ILogger<InventoryManagementViewModel>>(),
+                    _currentUser));
 
-            // Register views
-            services.AddTransient<SupplierInvoiceDetailsView>();
+            services.AddTransient(provider =>
+                new ProductCatalogViewModel(
+                    provider,
+                    provider.GetRequiredService<ILogger<ProductCatalogViewModel>>(),
+                    _currentUser));
 
-            // Register ViewModels for Inventory Management
+            // Register enhanced existing ViewModels
             services.AddTransient(provider =>
                 new StockManagementViewModel(
                     provider.GetRequiredService<IProductService>(),
@@ -158,17 +156,6 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<ILogger<BarcodeManagementViewModel>>(),
                     _currentUser));
 
-            // Register Supplier Invoice Dialog factory
-            services.AddTransient<Func<Supplier, SupplierInvoiceDialogViewModel>>(provider => (supplier) =>
-                new SupplierInvoiceDialogViewModel(
-                    provider.GetRequiredService<ISupplierInvoiceService>(),
-                    provider.GetRequiredService<ISupplierService>(),
-                    provider.GetRequiredService<ILogger<SupplierInvoiceDialogViewModel>>(),
-                    _currentUser,
-                    supplier));
-
-            services.AddTransient<SupplierInvoiceDialogView>();
-
             // Register Product Import/Export ViewModel
             services.AddTransient(provider =>
                 new ProductImportExportViewModel(
@@ -177,7 +164,7 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<ILogger<ProductImportExportViewModel>>(),
                     _currentUser));
 
-            // FIXED: Register ProductViewModel with service provider for proper scoping
+            // Register enhanced ProductViewModel with service provider for proper scoping
             services.AddTransient(provider =>
                 new ProductViewModel(
                     provider.GetRequiredService<IProductService>(),
@@ -204,17 +191,6 @@ namespace OfflinePOS.Admin
                     _currentUser,
                     provider));
 
-            // Register Supplier Invoice List factory
-            services.AddTransient<Func<Supplier, SupplierInvoiceListViewModel>>(provider => (supplier) =>
-                new SupplierInvoiceListViewModel(
-                    provider.GetRequiredService<ISupplierInvoiceService>(),
-                    provider.GetRequiredService<ISupplierService>(),
-                    provider.GetRequiredService<IProductService>(),
-                    provider.GetRequiredService<ILogger<SupplierInvoiceListViewModel>>(),
-                    _currentUser,
-                    provider,
-                    supplier));
-
             // Register Customer ViewModels
             services.AddTransient(provider =>
                 new CustomerViewModel(
@@ -230,7 +206,7 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<ILogger<TransactionHistoryViewModel>>(),
                     _currentUser));
 
-            // FIXED: Register ViewModel factories with service provider pattern
+            // Register ViewModel factories with service provider pattern
             services.AddTransient<Func<Category, bool, CategoryDialogViewModel>>(provider => (category, isNew) =>
                 new CategoryDialogViewModel(
                     provider.GetRequiredService<ICategoryService>(),
@@ -239,7 +215,7 @@ namespace OfflinePOS.Admin
                     category,
                     isNew));
 
-            // FIXED: Updated ProductDialogViewModel factory to use service provider
+            // Register ProductDialogViewModel factory to use service provider
             services.AddTransient<Func<Product, ProductDialogViewModel>>(provider => (product) =>
                 new ProductDialogViewModel(
                     provider,
@@ -278,7 +254,36 @@ namespace OfflinePOS.Admin
                     provider.GetRequiredService<ILogger<TransactionDetailsViewModel>>(),
                     transaction));
 
-            // Register Supplier Payment factory
+            // Register Supplier Invoice Management factories
+            services.AddTransient<Func<SupplierInvoice, Supplier, SupplierInvoiceDetailsViewModel>>(
+                provider => (invoice, supplier) =>
+                    new SupplierInvoiceDetailsViewModel(
+                        provider.GetRequiredService<ISupplierInvoiceService>(),
+                        provider.GetRequiredService<IProductService>(),
+                        provider.GetRequiredService<ILogger<SupplierInvoiceDetailsViewModel>>(),
+                        _currentUser,
+                        invoice,
+                        supplier,
+                        provider));
+
+            services.AddTransient<Func<Supplier, SupplierInvoiceDialogViewModel>>(provider => (supplier) =>
+                new SupplierInvoiceDialogViewModel(
+                    provider.GetRequiredService<ISupplierInvoiceService>(),
+                    provider.GetRequiredService<ISupplierService>(),
+                    provider.GetRequiredService<ILogger<SupplierInvoiceDialogViewModel>>(),
+                    _currentUser,
+                    supplier));
+
+            services.AddTransient<Func<Supplier, SupplierInvoiceListViewModel>>(provider => (supplier) =>
+                new SupplierInvoiceListViewModel(
+                    provider.GetRequiredService<ISupplierInvoiceService>(),
+                    provider.GetRequiredService<ISupplierService>(),
+                    provider.GetRequiredService<IProductService>(),
+                    provider.GetRequiredService<ILogger<SupplierInvoiceListViewModel>>(),
+                    _currentUser,
+                    provider,
+                    supplier));
+
             services.AddTransient<Func<Supplier, SupplierInvoice, SupplierPaymentViewModel>>(provider => (supplier, invoice) =>
                 new SupplierPaymentViewModel(
                     provider.GetRequiredService<ISupplierInvoiceService>(),
@@ -287,7 +292,7 @@ namespace OfflinePOS.Admin
                     supplier,
                     invoice));
 
-            // Register all views
+            // Register all views including NEW inventory management views
             RegisterViews(services);
 
             // Register authentication viewmodel
@@ -302,11 +307,15 @@ namespace OfflinePOS.Admin
         }
 
         /// <summary>
-        /// Registers all view components
+        /// Registers all view components including enhanced inventory management views
         /// </summary>
         private void RegisterViews(IServiceCollection services)
         {
-            // Register inventory views
+            // Register NEW inventory management views
+            services.AddTransient<InventoryManagementView>();
+            services.AddTransient<ProductCatalogView>();
+
+            // Register existing inventory views
             services.AddTransient<StockManagementView>();
             services.AddTransient<BarcodeManagementView>();
             services.AddTransient<ProductImportExportView>();
@@ -321,6 +330,8 @@ namespace OfflinePOS.Admin
             services.AddTransient<SupplierView>();
             services.AddTransient<SupplierDialogView>();
             services.AddTransient<SupplierInvoiceListView>();
+            services.AddTransient<SupplierInvoiceDetailsView>();
+            services.AddTransient<SupplierInvoiceDialogView>();
             services.AddTransient<SupplierPaymentDialogView>();
 
             // Register customer views
@@ -362,11 +373,11 @@ namespace OfflinePOS.Admin
                 var converterResourceDict = new ResourceDictionary { Source = converterResourceUri };
                 Application.Current.Resources.MergedDictionaries.Add(converterResourceDict);
 
-                _logger?.LogInformation("Common resources loaded successfully");
+                _logger?.LogInformation("Enhanced resources loaded successfully for inventory management");
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "Failed to load common resources. UI might be affected.");
+                _logger?.LogWarning(ex, "Failed to load enhanced resources. UI might be affected.");
             }
         }
 
@@ -399,7 +410,7 @@ namespace OfflinePOS.Admin
                 var dbContext = _serviceProvider.GetRequiredService<ApplicationDbContext>();
                 dbContext.CurrentUserId = _currentUser.Id;
 
-                _logger.LogInformation($"Creating main window for user: {_currentUser.Username}");
+                _logger.LogInformation($"Creating enhanced main window with inventory management for user: {_currentUser.Username}");
 
                 // Create and configure main window
                 var mainWindow = new MainWindow(_currentUser, _serviceProvider);
@@ -408,11 +419,11 @@ namespace OfflinePOS.Admin
 
                 mainWindow.Show();
 
-                _logger.LogInformation($"Main window opened for user: {_currentUser.Username}");
+                _logger.LogInformation($"Enhanced main window opened with inventory management for user: {_currentUser.Username}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error showing main window after login");
+                _logger.LogError(ex, "Error showing enhanced main window after login");
                 MessageBox.Show($"Error opening main application window: {ex.Message}\n\nPlease restart the application.",
                                 "Application Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Current.Shutdown();

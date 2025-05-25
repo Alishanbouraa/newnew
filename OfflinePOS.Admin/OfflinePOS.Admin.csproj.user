@@ -17,7 +17,13 @@
     <Compile Update="Views\CustomerView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Views\InventoryManagementView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Views\LoginView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\ProductCatalogView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Views\ProductDialogView.xaml.cs">

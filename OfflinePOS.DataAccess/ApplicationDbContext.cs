@@ -178,7 +178,37 @@ namespace OfflinePOS.DataAccess
                 .ToTable("Products")
                 .Property(p => p.RowVersion)
                 .IsRowVersion();
+            modelBuilder.Entity<Product>()
+    .Property(p => p.IsAvailableForSale)
+    .HasDefaultValue(false);
 
+            // Configure AvailableForSaleDate as optional
+            modelBuilder.Entity<Product>()
+                .Property(p => p.AvailableForSaleDate)
+                .IsRequired(false);
+
+            // Configure AvailableForSaleById as optional
+            modelBuilder.Entity<Product>()
+                .Property(p => p.AvailableForSaleById)
+                .IsRequired(false);
+
+            // Configure relationship for AvailableForSaleBy user
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.AvailableForSaleBy)
+                .WithMany()
+                .HasForeignKey(p => p.AvailableForSaleById)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Index for performance on IsAvailableForSale queries
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.IsAvailableForSale)
+                .HasDatabaseName("IX_Products_IsAvailableForSale");
+
+            // Composite index for inventory management queries
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => new { p.IsActive, p.IsAvailableForSale })
+                .HasDatabaseName("IX_Products_Active_AvailableForSale");
             // Configure Description and Dimensions to be optional
             modelBuilder.Entity<Product>()
                 .Property(p => p.Description)
